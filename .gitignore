@@ -1,0 +1,45 @@
+# GO
+# Binaries
+/bin/
+/dist/
+argus
+main
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Modules & Vendor
+vendor/
+
+# Test & Coverage
+*.out
+coverage.*
+profile.out
+*.coverprofile
+profile.cov
+
+# Local Env
+.env
+.env.local
+*.env
+
+# Tooling
+.air.toml
+tmp/
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Go workspace file
+go.work
+go.work.sum
+
+# SYSTEM
+.DS_Store
+Thumbs.db
