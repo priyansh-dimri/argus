@@ -28,14 +28,7 @@ func TestAnalyzer(t *testing.T) {
 		analyzer := NewAnalyzer(mockClient)
 
 		logLine := `GET /search?q=' OR 1=1 --`
-		req := protocol.AnalysisRequest{
-			Log:   logLine,
-			IP:    "11.1.2.3",
-			Route: "/api/login",
-			MetaData: map[string]string{
-				"app": "authService",
-			},
-		}
+		req := newTestRequest(logLine)
 
 		res, err := analyzer.Analyze(context.Background(), req)
 		assertNoError(t, err)
@@ -65,14 +58,7 @@ func TestAnalyzer(t *testing.T) {
 		analyzer := NewAnalyzer(mockClient)
 
 		logLine := `GET /search?q=' OR 1=1 --`
-		req := protocol.AnalysisRequest{
-			Log:   logLine,
-			IP:    "11.1.2.3",
-			Route: "/api/login",
-			MetaData: map[string]string{
-				"app": "authService",
-			},
-		}
+		req := newTestRequest(logLine)
 
 		_, err := analyzer.Analyze(context.Background(), req)
 		assertError(t, err, ErrMalformedAIResponse)
@@ -83,14 +69,7 @@ func TestAnalyzer(t *testing.T) {
 		analyzer := NewAnalyzer(mockClient)
 
 		logLine := `GET /search?q=' OR 1=1 --`
-		req := protocol.AnalysisRequest{
-			Log:   logLine,
-			IP:    "11.1.2.3",
-			Route: "/api/login",
-			MetaData: map[string]string{
-				"app": "authService",
-			},
-		}
+		req := newTestRequest(logLine)
 
 		_, err := analyzer.Analyze(context.Background(), req)
 		assertError(t, err, ErrAIGenerateFailed)
@@ -110,5 +89,16 @@ func assertNoError(t testing.TB, got error) {
 
 	if got != nil {
 		t.Fatalf("got error %q when not wanted", got)
+	}
+}
+
+func newTestRequest(logLine string) protocol.AnalysisRequest {
+	return protocol.AnalysisRequest{
+		Log:   logLine,
+		IP:    "11.1.2.3",
+		Route: "/api/login",
+		MetaData: map[string]string{
+			"app": "authService",
+		},
 	}
 }
