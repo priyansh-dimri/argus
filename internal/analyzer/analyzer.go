@@ -46,5 +46,9 @@ func (analyzer *Analyzer) Analyze(ctx context.Context, req protocol.AnalysisRequ
 		return protocol.AnalysisResponse{}, ErrMalformedAIResponse
 	}
 
+	if response.IsThreat == nil || response.Reason == nil || response.Confidence == nil {
+		return protocol.AnalysisResponse{}, ErrMalformedAIResponse
+	}
+
 	return response, nil
 }

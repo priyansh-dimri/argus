@@ -11,7 +11,7 @@ type AnalysisRequest struct {
 
 // Analysis Response is result sent by Argus backend
 type AnalysisResponse struct {
-	IsThreat   bool    `json:"is_threat"`
-	Reason     string  `json:"reason"`
-	Confidence float64 `json:"confidence"`
+	IsThreat   *bool    `json:"is_threat"`
+	Reason     *string  `json:"reason"`
+	Confidence *float64 `json:"confidence"`
 }

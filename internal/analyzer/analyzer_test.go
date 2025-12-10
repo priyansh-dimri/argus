@@ -34,16 +34,16 @@ func TestAnalyzer(t *testing.T) {
 		res, err := analyzer.Analyze(context.Background(), req)
 		assertNoError(t, err)
 
-		if !res.IsThreat {
+		if !(*res.IsThreat) {
 			t.Fatalf("expected IsThreat=true, got false; resp=%+v", res)
 		}
 
-		if strings.TrimSpace(res.Reason) == "" {
+		if strings.TrimSpace(*res.Reason) == "" {
 			t.Fatalf("expected non-empty Reason")
 		}
 
-		if res.Confidence < 0.9 {
-			t.Fatalf("expected confidence >= 0.9, got %f", res.Confidence)
+		if *res.Confidence < 0.9 {
+			t.Fatalf("expected confidence >= 0.9, got %f", *res.Confidence)
 		}
 
 		if !strings.Contains(mockClient.PrevPrompt, logLine) {
@@ -92,6 +92,68 @@ func TestAnalyzer(t *testing.T) {
 		if err == nil || !strings.Contains(err.Error(), "JSON marshal request error") {
 			t.Fatalf("expected JSON marshal request error, got %v", err)
 		}
+	})
+
+	t.Run("detect empty AI response", func(t *testing.T) {
+		mockResponse := ""
+		mockClient := &mockAIClient{Resp: mockResponse}
+		analyzer := NewAnalyzer(mockClient)
+
+		logLine := `GET /foo/bar`
+		req := newTestRequest(logLine)
+
+		res, err := analyzer.Analyze(context.Background(), req)
+		assertError(t, err, ErrMalformedAIResponse)
+
+		if (res != protocol.AnalysisResponse{}) {
+			t.Errorf("expected empty AnalysisResponse, got %+v", res)
+		}
+	})
+
+	t.Run("detect missing isThreat field in response", func(t *testing.T) {
+		mockResponse := `{"reason": "SQL injection detected", "confidence": 0.95}`
+		mockClient := &mockAIClient{Resp: mockResponse}
+		analyzer := NewAnalyzer(mockClient)
+
+		logLine := `GET /search?q=' OR 1=1 --`
+		req := newTestRequest(logLine)
+
+		_, err := analyzer.Analyze(context.Background(), req)
+		assertError(t, err, ErrMalformedAIResponse)
+	})
+	t.Run("detect missing reason field in response", func(t *testing.T) {
+		mockResponse := `{"is_threat": true, "confidence": 0.95}`
+		mockClient := &mockAIClient{Resp: mockResponse}
+		analyzer := NewAnalyzer(mockClient)
+
+		logLine := `GET /search?q=' OR 1=1 --`
+		req := newTestRequest(logLine)
+
+		_, err := analyzer.Analyze(context.Background(), req)
+		assertError(t, err, ErrMalformedAIResponse)
+	})
+	t.Run("detect missing confidence field in response", func(t *testing.T) {
+		mockResponse := `{"is_threat": true, "reason": "SQL injection detected"}`
+		mockClient := &mockAIClient{Resp: mockResponse}
+		analyzer := NewAnalyzer(mockClient)
+
+		logLine := `GET /search?q=' OR 1=1 --`
+		req := newTestRequest(logLine)
+
+		_, err := analyzer.Analyze(context.Background(), req)
+		assertError(t, err, ErrMalformedAIResponse)
+	})
+
+	t.Run("detect multiple missing fields in response", func(t *testing.T) {
+		mockResponse := `{"confidence": 0.95}`
+		mockClient := &mockAIClient{Resp: mockResponse}
+		analyzer := NewAnalyzer(mockClient)
+
+		logLine := `GET /search?q=' OR 1=1 --`
+		req := newTestRequest(logLine)
+
+		_, err := analyzer.Analyze(context.Background(), req)
+		assertError(t, err, ErrMalformedAIResponse)
 	})
 }
 
