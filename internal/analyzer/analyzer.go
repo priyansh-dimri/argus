@@ -14,15 +14,19 @@ type AIClient interface {
 }
 
 type Analyzer struct {
-	client AIClient
+	client  AIClient
+	marshal func(v any) ([]byte, error)
 }
 
 func NewAnalyzer(c AIClient) *Analyzer {
-	return &Analyzer{client: c}
+	return &Analyzer{
+		client:  c,
+		marshal: json.Marshal,
+	}
 }
 
 func (analyzer *Analyzer) Analyze(ctx context.Context, req protocol.AnalysisRequest) (protocol.AnalysisResponse, error) {
-	reqJSON, err := json.Marshal(req)
+	reqJSON, err := analyzer.marshal(req)
 
 	if err != nil {
 		return protocol.AnalysisResponse{}, fmt.Errorf("JSON marshal request error: %v", err)

@@ -2,6 +2,7 @@ package analyzer
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -73,6 +74,24 @@ func TestAnalyzer(t *testing.T) {
 
 		_, err := analyzer.Analyze(context.Background(), req)
 		assertError(t, err, ErrAIGenerateFailed)
+	})
+
+	t.Run("return json marshal error", func(t *testing.T) {
+		mockClient := &mockAIClient{}
+		analyzer := &Analyzer{
+			client: mockClient,
+			marshal: func(v any) ([]byte, error) {
+				return nil, fmt.Errorf("forced marshal error")
+			},
+		}
+
+		logLine := `GET /search?q=' OR 1=1 --`
+		req := newTestRequest(logLine)
+
+		_, err := analyzer.Analyze(context.Background(), req)
+		if err == nil || !strings.Contains(err.Error(), "JSON marshal request error") {
+			t.Fatalf("expected JSON marshal request error, got %v", err)
+		}
 	})
 }
 
