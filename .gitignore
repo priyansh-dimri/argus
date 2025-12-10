@@ -2,8 +2,8 @@
 # Binaries
 /bin/
 /dist/
-argus
-main
+/argus
+/main
 *.exe
 *.exe~
 *.dll
