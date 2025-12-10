@@ -9,17 +9,6 @@ import (
 	"github.com/priyansh-dimri/argus/pkg/protocol"
 )
 
-const (
-	ErrMalformedAIResponse AnalyzerErr = "malformed AI response"
-	ErrAIGenerateFailed    AnalyzerErr = "AI generate failed"
-)
-
-type AnalyzerErr string
-
-func (e AnalyzerErr) Error() string {
-	return string(e)
-}
-
 type AIClient interface {
 	Generate(ctx context.Context, prompt string) (string, error)
 }
