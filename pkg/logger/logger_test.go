@@ -51,6 +51,22 @@ func TestLogger(t *testing.T) {
 		}
 	})
 
+	t.Run("Warn logs with WARN level", func(t *testing.T) {
+		var buf bytes.Buffer
+		Initialize(&buf)
+		Warn("Some issue", "resource_id", 123)
+		output := buf.String()
+		if !strings.Contains(output, `"level":"WARN"`) {
+			t.Errorf("Expected level WARN, got: %s", output)
+		}
+		if !strings.Contains(output, `"msg":"Some issue"`) {
+			t.Errorf("Expected msg 'Potential issue', got: %s", output)
+		}
+		if !strings.Contains(output, `"resource_id":123`) {
+			t.Errorf("Expected resource_id 456, got: %s", output)
+		}
+	})
+
 	t.Run("With creates child logger with context", func(t *testing.T) {
 		// 1. Setup
 		var buf bytes.Buffer
@@ -125,6 +141,19 @@ func TestLazyLoggerInitialization(t *testing.T) {
 		}
 		if !strings.Contains(output, "lazy error") {
 			t.Error("Error should have logged to stdout")
+		}
+	})
+
+	t.Run("Warn triggers lazy init", func(t *testing.T) {
+		Log = nil
+		output := captureStdout(func() {
+			Warn("lazy warn")
+		})
+		if Log == nil {
+			t.Error("Warn should have triggered InitLogger")
+		}
+		if !strings.Contains(output, "lazy warn") {
+			t.Error("Warn should have logged to stdout")
 		}
 	})
 

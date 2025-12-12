@@ -35,6 +35,13 @@ func Error(msg string, err error, args ...any) {
 	Log.Error(msg, allArgs...)
 }
 
+func Warn(msg string, args ...any) {
+	if Log == nil {
+		InitLogger()
+	}
+	Log.Warn(msg, args...)
+}
+
 func With(args ...any) *slog.Logger {
 	if Log == nil {
 		InitLogger()

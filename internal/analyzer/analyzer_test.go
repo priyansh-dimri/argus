@@ -10,14 +10,30 @@ import (
 )
 
 type mockAIClient struct {
-	Resp       string
-	Err        error
-	PrevPrompt string
+	Resp             string
+	Err              error
+	PrevPrompt       string
+	CountTokensFunc  func(ctx context.Context, text string) (int, error)
+	GetMaxTokensFunc func() int
 }
 
 func (m *mockAIClient) Generate(ctx context.Context, prompt string) (string, error) {
 	m.PrevPrompt = prompt
 	return m.Resp, m.Err
+}
+
+func (m *mockAIClient) CountTokens(ctx context.Context, text string) (int, error) {
+	if m.CountTokensFunc != nil {
+		return m.CountTokensFunc(ctx, text)
+	}
+	return 100, nil
+}
+
+func (m *mockAIClient) GetMaxTokens() int {
+	if m.GetMaxTokensFunc != nil {
+		return m.GetMaxTokensFunc()
+	}
+	return 4000
 }
 
 func TestAnalyzer(t *testing.T) {
@@ -154,6 +170,53 @@ func TestAnalyzer(t *testing.T) {
 
 		_, err := analyzer.Analyze(context.Background(), req)
 		assertError(t, err, ErrMalformedAIResponse)
+	})
+
+	t.Run("truncate logs exceeding token count limit", func(t *testing.T) {
+		mockClient := &mockAIClient{
+			Resp: `{"is_threat": false, "reason": "safe", "confidence": 1.0}`,
+			CountTokensFunc: func(ctx context.Context, text string) (int, error) {
+				return 5000, nil
+			},
+			GetMaxTokensFunc: func() int {
+				return 4000
+			},
+		}
+
+		analyzer := NewAnalyzer(mockClient)
+
+		hugeLog := strings.Repeat("A", 10000) // 10 thousand 'A's
+		request := newTestRequest(hugeLog)
+
+		_, err := analyzer.Analyze(context.Background(), request)
+		assertNoError(t, err)
+
+		if strings.Contains(mockClient.PrevPrompt, hugeLog) {
+			t.Fatal("expected truncated log, found original log")
+		}
+
+		if !strings.Contains(mockClient.PrevPrompt, "[TRUNCATED]") {
+			t.Fatal("Prompt does not contain [TRUNCATED]")
+		}
+	})
+
+	t.Run("proceed even if CountTokens fails", func(t *testing.T) {
+		mockClient := &mockAIClient{
+			Resp: `{"is_threat": false, "reason": "safe", "confidence": 1.0}`,
+			CountTokensFunc: func(ctx context.Context, text string) (int, error) {
+				return 0, fmt.Errorf("some error")
+			},
+		}
+
+		analyzer := NewAnalyzer(mockClient)
+		req := newTestRequest("log")
+
+		_, err := analyzer.Analyze(context.Background(), req)
+		assertNoError(t, err)
+
+		if mockClient.PrevPrompt == "" {
+			t.Fatal("expected Generate to be called even if CountTokens fails")
+		}
 	})
 }
 

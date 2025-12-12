@@ -6,11 +6,14 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/priyansh-dimri/argus/pkg/logger"
 	"github.com/priyansh-dimri/argus/pkg/protocol"
 )
 
 type AIClient interface {
 	Generate(ctx context.Context, prompt string) (string, error)
+	CountTokens(ctx context.Context, text string) (int, error)
+	GetMaxTokens() int
 }
 
 type Analyzer struct {
@@ -26,6 +29,19 @@ func NewAnalyzer(c AIClient) *Analyzer {
 }
 
 func (analyzer *Analyzer) Analyze(ctx context.Context, req protocol.AnalysisRequest) (protocol.AnalysisResponse, error) {
+	count, err := analyzer.client.CountTokens(ctx, req.Log)
+	maxTokens := analyzer.client.GetMaxTokens()
+
+	if err != nil {
+		logger.Warn("Failed to count tokens", "error", err)
+	} else if count > maxTokens {
+		safeLength := len(req.Log) / 2 // TODO: use a better strategy
+		if safeLength > 0 {
+			req.Log = req.Log[:safeLength] + "...[TRUNCATED]"
+			logger.Info("Log truncated due to token limit", "original_tokens", count, "limit", maxTokens)
+		}
+	}
+
 	reqJSON, err := analyzer.marshal(req)
 
 	if err != nil {
