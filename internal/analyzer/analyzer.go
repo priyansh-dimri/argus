@@ -29,22 +29,14 @@ func NewAnalyzer(c AIClient) *Analyzer {
 }
 
 func (analyzer *Analyzer) Analyze(ctx context.Context, req protocol.AnalysisRequest) (protocol.AnalysisResponse, error) {
-	count, err := analyzer.client.CountTokens(ctx, req.Log)
 	maxTokens := analyzer.client.GetMaxTokens()
 
-	if err != nil {
-		logger.Warn("Failed to count tokens", "error", err)
-	} else if count > maxTokens {
-		safeLength := len(req.Log) / 2 // TODO: use a better strategy
-		if safeLength > 0 {
-			req.Log = req.Log[:safeLength] + "...[TRUNCATED]"
-			logger.Info("Log truncated due to token limit", "original_tokens", count, "limit", maxTokens)
-		}
-	}
+	req.Log = TruncateLog(ctx, analyzer.client, req.Log, maxTokens)
 
 	reqJSON, err := analyzer.marshal(req)
 
 	if err != nil {
+		logger.Error("Failed to marshal request for AI", err)
 		return protocol.AnalysisResponse{}, fmt.Errorf("JSON marshal request error: %v", err)
 	}
 
@@ -53,16 +45,19 @@ func (analyzer *Analyzer) Analyze(ctx context.Context, req protocol.AnalysisRequ
 	output, err := analyzer.client.Generate(ctx, prompt)
 
 	if err != nil {
+		logger.Error("AI Generation failed", err)
 		return protocol.AnalysisResponse{}, ErrAIGenerateFailed
 	}
 
 	var response protocol.AnalysisResponse
 
 	if err := json.Unmarshal([]byte(output), &response); err != nil {
+		logger.Error("Failed to parse AI response", err, "raw_output", output)
 		return protocol.AnalysisResponse{}, ErrMalformedAIResponse
 	}
 
 	if response.IsThreat == nil || response.Reason == nil || response.Confidence == nil {
+		logger.Warn("AI returned empty reason", "raw_output", output)
 		return protocol.AnalysisResponse{}, ErrMalformedAIResponse
 	}
 
