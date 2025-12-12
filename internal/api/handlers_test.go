@@ -101,21 +101,6 @@ func TestHandlers(t *testing.T) {
 		}
 	})
 
-	t.Run("return error for non-POST request", func(t *testing.T) {
-		response := protocol.AnalysisResponse{}
-		mock := newMockAnalyzer(response, nil)
-		api := &API{Analyzer: mock, Store: nil}
-
-		request_body := map[string]string{"log": `GET /search?q=' OR 1=1 --`}
-		req, recorder := newJSONRequest(t, http.MethodGet, "/analyze", request_body)
-		api.HandleAnalyze(recorder, req)
-
-		resp := recorder.Result()
-		defer resp.Body.Close()
-
-		assertStatusCode(t, resp.StatusCode, http.StatusMethodNotAllowed)
-	})
-
 	t.Run("return error for invalid JSON", func(t *testing.T) {
 		response := protocol.AnalysisResponse{}
 		mock := newMockAnalyzer(response, nil)

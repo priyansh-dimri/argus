@@ -32,11 +32,6 @@ func NewAPI(analyzer Analyzer, store Store) *API {
 }
 
 func (api *API) HandleAnalyze(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	var req protocol.AnalysisRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "JSON decoding error", http.StatusBadRequest)
