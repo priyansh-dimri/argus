@@ -5,9 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
@@ -69,16 +69,7 @@ func TestHandlers(t *testing.T) {
 		api := &API{Analyzer: mock, Store: store}
 
 		request_body := map[string]string{"log": `GET /search?q=' OR 1=1 --`}
-		body, err := json.Marshal(request_body)
-
-		if err != nil {
-			t.Fatalf("failed to marshal request body: %v", err)
-		}
-
-		req := httptest.NewRequest(http.MethodPost, "/analyze", bytes.NewReader(body))
-		req.Header.Set("Content-Type", "application/json")
-
-		recorder := httptest.NewRecorder()
+		req, recorder := newJSONRequest(t, http.MethodPost, "/analyze", request_body)
 		api.HandleAnalyze(recorder, req)
 
 		resp := recorder.Result()
@@ -135,16 +126,7 @@ func TestHandlers(t *testing.T) {
 		}
 
 		request_body := map[string]string{"log": `GET /search?q=' OR 1=1 --`}
-		body, err := json.Marshal(request_body)
-
-		if err != nil {
-			t.Fatalf("failed to marshal request body: %v", err)
-		}
-
-		req := httptest.NewRequest(http.MethodPost, "/analyze", bytes.NewReader(body))
-		req.Header.Set("Content-Type", "application/json")
-
-		recorder := httptest.NewRecorder()
+		req, recorder := newJSONRequest(t, http.MethodPost, "/analyze", request_body)
 		api.HandleAnalyze(recorder, req)
 
 		resp := recorder.Result()
@@ -179,16 +161,7 @@ func TestHandlers(t *testing.T) {
 		api := &API{Analyzer: mock, Store: nil}
 
 		request_body := map[string]string{"log": `GET /search?q=' OR 1=1 --`}
-		body, err := json.Marshal(request_body)
-
-		if err != nil {
-			t.Fatalf("failed to marshal request body: %v", err)
-		}
-
-		req := httptest.NewRequest(http.MethodGet, "/analyze", bytes.NewReader(body))
-		req.Header.Set("Content-Type", "application/json")
-
-		recorder := httptest.NewRecorder()
+		req, recorder := newJSONRequest(t, http.MethodGet, "/analyze", request_body)
 		api.HandleAnalyze(recorder, req)
 
 		resp := recorder.Result()
@@ -202,11 +175,7 @@ func TestHandlers(t *testing.T) {
 		mock := newMockAnalyzer(response, nil)
 		api := &API{Analyzer: mock, Store: nil}
 
-		body := strings.NewReader(`{bad json}`)
-		req := httptest.NewRequest(http.MethodPost, "/analyze", body)
-		req.Header.Set("Content-Type", "application/json")
-
-		recorder := httptest.NewRecorder()
+		req, recorder := newJSONRequest(t, http.MethodPost, "/analyze", `{bad json}`)
 		api.HandleAnalyze(recorder, req)
 
 		resp := recorder.Result()
@@ -221,16 +190,7 @@ func TestHandlers(t *testing.T) {
 		api := &API{Analyzer: mock, Store: nil}
 
 		request_body := map[string]string{"log": "test"}
-		body, err := json.Marshal(request_body)
-
-		if err != nil {
-			t.Fatalf("failed to marshal request body: %v", err)
-		}
-
-		req := httptest.NewRequest(http.MethodPost, "/analyze", bytes.NewReader(body))
-		req.Header.Set("Content-Type", "application/json")
-
-		recorder := httptest.NewRecorder()
+		req, recorder := newJSONRequest(t, http.MethodPost, "/analyze", request_body)
 		api.HandleAnalyze(recorder, req)
 
 		resp := recorder.Result()
@@ -265,6 +225,22 @@ func TestNewAPI(t *testing.T) {
 	if api.ErrorReporter == nil {
 		t.Error("NewAPI did not assign a default ErrorReporter")
 	}
+}
+
+func newJSONRequest(t testing.TB, method, path string, request_body any) (*http.Request, *httptest.ResponseRecorder) {
+	t.Helper()
+	var buf io.Reader
+	if request_body != nil {
+		body, err := json.Marshal(request_body)
+		if err != nil {
+			t.Fatalf("failed to marshal request body: %v", err)
+		}
+		buf = bytes.NewReader(body)
+	}
+
+	req := httptest.NewRequest(method, path, buf)
+	req.Header.Set("Content-Type", "application/json")
+	return req, httptest.NewRecorder()
 }
 
 func assertStatusCode(t testing.TB, got, want int) {
