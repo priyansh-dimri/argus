@@ -52,15 +52,7 @@ func (m *mockStore) SaveThreat(ctx context.Context, req protocol.AnalysisRequest
 
 func TestHandlers(t *testing.T) {
 	t.Run("return threat response and SaveThreat asynchronously", func(t *testing.T) {
-		isThreat := true
-		reason := "SQLi attack"
-		confidence := 0.99
-
-		response := protocol.AnalysisResponse{
-			IsThreat:   &isThreat,
-			Reason:     &reason,
-			Confidence: &confidence,
-		}
+		response := sampleThreat()
 
 		mock := newMockAnalyzer(response, nil)
 
@@ -99,16 +91,7 @@ func TestHandlers(t *testing.T) {
 	})
 
 	t.Run("return threat response and return SaveThreat error asynchronously", func(t *testing.T) {
-		isThreat := true
-		reason := "SQLi attack"
-		confidence := 0.99
-
-		response := protocol.AnalysisResponse{
-			IsThreat:   &isThreat,
-			Reason:     &reason,
-			Confidence: &confidence,
-		}
-
+		response := sampleThreat()
 		mock := newMockAnalyzer(response, nil)
 		store := &mockStore{Err: errors.New("database connection lost")}
 
@@ -248,5 +231,16 @@ func assertStatusCode(t testing.TB, got, want int) {
 
 	if got != want {
 		t.Fatalf("got status %d, wanted %d", got, want)
+	}
+}
+
+func sampleThreat() protocol.AnalysisResponse {
+	isThreat := true
+	reason := "SQLi attack"
+	confidence := 0.99
+	return protocol.AnalysisResponse{
+		IsThreat:   &isThreat,
+		Reason:     &reason,
+		Confidence: &confidence,
 	}
 }
