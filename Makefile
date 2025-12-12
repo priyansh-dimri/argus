@@ -51,6 +51,12 @@ test/cover:
 	go test -v -race -buildvcs -coverprofile=/tmp/coverage.out ./...
 	go tool cover -html=/tmp/coverage.out
 
+## test/integration: run integration tests with coverage
+.PHONY: test/integration
+test/integration:
+	go test -v -tags=integration -coverpkg=./internal/analyzer -coverprofile=/tmp/integration_coverage.out ./cmd/integration
+	go tool cover -html=/tmp/integration_coverage.out
+
 # ==================================================================================== #
 # DEVELOPMENT
 # ==================================================================================== #
