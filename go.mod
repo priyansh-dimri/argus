@@ -6,6 +6,7 @@ require (
 	github.com/corazawaf/coraza/v3 v3.3.3
 	github.com/jackc/pgx/v5 v5.7.6
 	github.com/pashagolub/pgxmock/v4 v4.9.0
+	github.com/sony/gobreaker/v2 v2.3.0
 	google.golang.org/genai v1.39.0
 )
 
