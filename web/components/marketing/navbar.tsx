@@ -33,9 +33,7 @@ export function Navbar() {
             <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 transition-colors group-hover:bg-primary/20">
               <ShieldCheck className="h-5 w-5 text-neon-blue transition-transform group-hover:scale-110" />
             </div>
-            <span className="font-bold text-lg tracking-tight">
-              Argus
-            </span>
+            <span className="font-bold text-lg tracking-tight">Argus</span>
           </Link>
 
           <div className="hidden md:flex items-center gap-8">
@@ -68,7 +66,7 @@ export function Navbar() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="hover:bg-transparent hover:text-neon-blue"
+                className="hover:bg-transparent hover:text-neon-blue rounded-full px-5"
               >
                 Log in
               </Button>
@@ -79,7 +77,7 @@ export function Navbar() {
                 size="sm"
                 className="rounded-full px-5 bg-white text-black hover:bg-white/90 font-semibold shadow-[0_0_15px_rgba(255,255,255,0.3)] transition-shadow"
               >
-                Deploy Proxy
+                Sign Up
               </Button>
             </Link>
           </div>
