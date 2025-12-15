@@ -31,7 +31,7 @@ export function PlaygroundSection() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-3xl md:text-5xl font-bold tracking-tight mb-4 text-white"
+          className="text-3xl md:text-5xl font-bold tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-b from-white to-white/50"
         >
           Choose Your Trade-off
         </motion.h2>
