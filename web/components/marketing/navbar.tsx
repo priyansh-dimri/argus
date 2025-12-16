@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { ShieldCheck, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import { FaGithub } from "react-icons/fa";
 import { useState } from "react";
 import {
@@ -14,6 +14,7 @@ import {
   SheetTitle,
   SheetHeader,
 } from "@/components/ui/sheet";
+import { ArgusLogo } from "../shared/argus-logo";
 
 const navItems = [
   { name: "Docs", href: "/docs" },
@@ -30,10 +31,7 @@ export function Navbar() {
       <div className="mx-auto max-w-5xl">
         <nav className="glass rounded-full px-6 h-14 flex items-center justify-between transition-all duration-300">
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 transition-colors group-hover:bg-primary/20">
-              <ShieldCheck className="h-5 w-5 text-neon-blue transition-transform group-hover:scale-110" />
-            </div>
-            <span className="font-bold text-lg tracking-tight">Argus</span>
+            <ArgusLogo />
           </Link>
 
           <div className="hidden md:flex items-center gap-8">
