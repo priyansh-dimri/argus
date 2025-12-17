@@ -60,27 +60,17 @@ jobs:
             ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}-${{ github.run_id }}
       
-      - name: Go Coverage Badge
-        uses: tj-actions/coverage-badge-go@v3
-        with:
-          filename: coverage.out
-
-      - name: Verify Changed files
-        uses: tj-actions/verify-changed-files@v16
-        id: verify-changed-files
-        with:
-          files: README.md
-
-      - name: Commit changes
-        if: steps.verify-changed-files.outputs.files_changed == 'true'
+      - name: Update coverage badge
         run: |
+          make test/ci-cover
+          grep -v -E '(gemini.go|main.go|rules.go)' coverage.raw.out > coverage.out
+          COVERAGE=$(go tool cover -func=coverage.out | tail -n 1 | awk '{print $3}' | sed 's/%//')
+          COLOR="lightgrey"
+          [ $COVERAGE -ge 90 ] && COLOR="brightgreen" || [ $COVERAGE -ge 70 ] && COLOR="yellow"
+          sed -i "s|coverage-[0-9]*%25|coverage-${COVERAGE}%25|" README.md
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add README.md
-          git commit -m "chore: update coverage badge"
-
-      - name: Push changes
-        if: steps.verify-changed-files.outputs.files_changed == 'true'
-        run: |
+          git commit -m "chore: update coverage badge [${COVERAGE}%]" || true
           git push origin HEAD:${{ github.ref_name }}
 
