@@ -5,60 +5,116 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/priyansh-dimri/argus/pkg/protocol"
 )
 
 func TestRouter(t *testing.T) {
 	mock := newMockAnalyzer(protocol.AnalysisResponse{}, nil)
-	store := &mockStore{}
+	store := &mockStore{
+		MockProjectID: "project_123",
+	}
 	apiHandler := NewAPI(mock, store)
 
+	testSecret := "test-secret"
 	mw := &Middleware{
 		Store:     store,
-		JWTSecret: "test-secret",
+		JWTSecret: testSecret,
 	}
 
 	router := NewRouter(apiHandler, mw)
+
+	validJWT, _ := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub": "user_123",
+		"exp": time.Now().Add(time.Hour).Unix(),
+	}).SignedString([]byte(testSecret))
 
 	tests := []struct {
 		name           string
 		method         string
 		path           string
+		authHeader     string
 		expectedStatus int
-		needsAuth      bool
 	}{
 		{
-			name:           "Valid POST /analyze",
+			name:           "Valid + Authenticated POST /analyze",
 			method:         http.MethodPost,
 			path:           "/analyze",
+			authHeader:     "Bearer argus_valid_key",
 			expectedStatus: http.StatusOK,
-			needsAuth:      true,
+		},
+		{
+			name:           "Valid + Unauthenticated POST /analyze",
+			method:         http.MethodPost,
+			path:           "/analyze",
+			authHeader:     "",
+			expectedStatus: http.StatusUnauthorized,
 		},
 		{
 			name:           "Invalid Method GET /analyze",
 			method:         http.MethodGet,
 			path:           "/analyze",
+			authHeader:     "Bearer argus_valid_key",
 			expectedStatus: http.StatusMethodNotAllowed,
-			needsAuth:      false,
 		},
 		{
 			name:           "Unknown Route POST /random",
 			method:         http.MethodPost,
 			path:           "/random",
 			expectedStatus: http.StatusNotFound,
-			needsAuth:      false,
+		},
+		{
+			name:           "Valid + Authenticated GET /projects",
+			method:         http.MethodGet,
+			path:           "/projects",
+			authHeader:     "Bearer " + validJWT,
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Valid + Authenticated POST /projects",
+			method:         http.MethodPost,
+			path:           "/projects",
+			authHeader:     "Bearer " + validJWT,
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Valid + Unauthenticated GET /projects",
+			method:         http.MethodGet,
+			path:           "/projects",
+			authHeader:     "",
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "Valid + Unauthenticated POST /projects",
+			method:         http.MethodPost,
+			path:           "/projects",
+			authHeader:     "",
+			expectedStatus: http.StatusUnauthorized,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			body := strings.NewReader(`{"log": "test"}`)
+			var body *strings.Reader
+			if tc.method == http.MethodPost {
+				switch tc.path {
+				case "/analyze":
+					body = strings.NewReader(`{"log": "test"}`)
+				case "/projects":
+					body = strings.NewReader(`{"name": "test project"}`)
+				default:
+					body = strings.NewReader("")
+				}
+			} else {
+				body = strings.NewReader("")
+			}
 			req := httptest.NewRequest(tc.method, tc.path, body)
 			req.Header.Set("Content-Type", "application/json")
 
-			if tc.needsAuth {
-				req.Header.Set("Authorization", "Bearer argus_test_key")
+			if tc.authHeader != "" {
+				req.Header.Set("Authorization", tc.authHeader)
 			}
 
 			recorder := httptest.NewRecorder()
