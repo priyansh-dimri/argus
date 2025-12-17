@@ -7,13 +7,14 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/priyansh-dimri/argus/pkg/protocol"
 )
 
-func TestHandlers(t *testing.T) {
+func TestAnalyzeHandler(t *testing.T) {
 	t.Run("return threat response and SaveThreat asynchronously", func(t *testing.T) {
 		response := sampleThreat()
 
@@ -146,6 +147,222 @@ func TestHandlers(t *testing.T) {
 	})
 }
 
+func TestHandleCreateProject(t *testing.T) {
+	t.Run("return unauthorized when user_id is missing", func(t *testing.T) {
+		api := &API{Store: &mockStore{}}
+		req := httptest.NewRequest(http.MethodPost, "/projects", nil)
+		recorder := httptest.NewRecorder()
+
+		api.HandleCreateProject(recorder, req)
+
+		assertStatusCode(t, recorder.Code, http.StatusUnauthorized)
+	})
+
+	t.Run("return error for invalid JSON body", func(t *testing.T) {
+		api := &API{Store: &mockStore{}}
+		req := httptest.NewRequest(http.MethodPost, "/projects", strings.NewReader("{bad json"))
+		req = addUserIDContext(req)
+		recorder := httptest.NewRecorder()
+
+		api.HandleCreateProject(recorder, req)
+
+		assertStatusCode(t, recorder.Code, http.StatusBadRequest)
+	})
+
+	t.Run("return error when project name is empty", func(t *testing.T) {
+		api := &API{Store: &mockStore{}}
+		body := strings.NewReader(`{"name": ""}`)
+		req := httptest.NewRequest(http.MethodPost, "/projects", body)
+		req = addUserIDContext(req)
+		recorder := httptest.NewRecorder()
+
+		api.HandleCreateProject(recorder, req)
+
+		assertStatusCode(t, recorder.Code, http.StatusBadRequest)
+	})
+
+	t.Run("return internal error when storage fails", func(t *testing.T) {
+		store := &mockStore{Err: errors.New("db failure")}
+		errorChan := make(chan error, 1)
+		api := &API{
+			Store: store,
+			ErrorReporter: func(msg string, args ...any) {
+				if len(args) > 1 {
+					if err, ok := args[1].(error); ok {
+						errorChan <- err
+					}
+				}
+			},
+		}
+
+		body := strings.NewReader(`{"name": "My Project"}`)
+		req := httptest.NewRequest(http.MethodPost, "/projects", body)
+		req = addUserIDContext(req)
+		recorder := httptest.NewRecorder()
+
+		api.HandleCreateProject(recorder, req)
+
+		assertStatusCode(t, recorder.Code, http.StatusInternalServerError)
+
+		select {
+		case err := <-errorChan:
+			if err.Error() != "db failure" {
+				t.Errorf("expected 'db failure', got %v", err)
+			}
+		case <-time.After(100 * time.Millisecond):
+			t.Fatal("Timed out waiting for error report")
+		}
+	})
+
+	t.Run("create project successfully", func(t *testing.T) {
+		store := &mockStore{}
+		api := &API{Store: store}
+
+		body := strings.NewReader(`{"name": "New Project"}`)
+		req := httptest.NewRequest(http.MethodPost, "/projects", body)
+		req = addUserIDContext(req)
+		recorder := httptest.NewRecorder()
+
+		api.HandleCreateProject(recorder, req)
+
+		assertStatusCode(t, recorder.Code, http.StatusOK)
+
+		var resp protocol.CreateProjectResponse
+		if err := json.NewDecoder(recorder.Body).Decode(&resp); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+
+		if resp.Project.Name != "New Project" {
+			t.Errorf("expected project name 'New Project', got %q", resp.Project.Name)
+		}
+	})
+}
+
+func TestHandleListProjects(t *testing.T) {
+	t.Run("return unauthorized when user_id is missing", func(t *testing.T) {
+		api := &API{Store: &mockStore{}}
+		// Request without addUserIDContext
+		req := httptest.NewRequest(http.MethodGet, "/projects", nil)
+		recorder := httptest.NewRecorder()
+
+		api.HandleListProjects(recorder, req)
+
+		assertStatusCode(t, recorder.Code, http.StatusUnauthorized)
+	})
+
+	t.Run("return internal error when storage fails", func(t *testing.T) {
+		store := &mockStore{Err: errors.New("db failure")}
+		errorChan := make(chan error, 1)
+		api := &API{
+			Store: store,
+			ErrorReporter: func(msg string, args ...any) {
+				if len(args) > 1 {
+					if err, ok := args[1].(error); ok {
+						errorChan <- err
+					}
+				}
+			},
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/projects", nil)
+		req = addUserIDContext(req)
+		recorder := httptest.NewRecorder()
+
+		api.HandleListProjects(recorder, req)
+
+		assertStatusCode(t, recorder.Code, http.StatusInternalServerError)
+
+		select {
+		case err := <-errorChan:
+			if err.Error() != "db failure" {
+				t.Errorf("expected 'db failure', got %v", err)
+			}
+		case <-time.After(100 * time.Millisecond):
+			t.Fatal("Timed out waiting for error report")
+		}
+	})
+
+	t.Run("return empty list when no projects found", func(t *testing.T) {
+		// Mock returns nil list by default if MockProjectList is nil
+		store := &mockStore{}
+		api := &API{Store: store}
+
+		req := httptest.NewRequest(http.MethodGet, "/projects", nil)
+		req = addUserIDContext(req)
+		recorder := httptest.NewRecorder()
+
+		api.HandleListProjects(recorder, req)
+
+		assertStatusCode(t, recorder.Code, http.StatusOK)
+
+		var projects []protocol.Project
+		if err := json.NewDecoder(recorder.Body).Decode(&projects); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+
+		if projects == nil || len(projects) != 0 {
+			t.Errorf("expected empty list, got %v", projects)
+		}
+	})
+
+	t.Run("return list of projects successfully", func(t *testing.T) {
+		expectedProjects := []protocol.Project{
+			{ID: "p1", Name: "Project A"},
+			{ID: "p2", Name: "Project B"},
+		}
+		store := &mockStore{
+			MockProjectList: expectedProjects,
+		}
+		api := &API{Store: store}
+
+		req := httptest.NewRequest(http.MethodGet, "/projects", nil)
+		req = addUserIDContext(req)
+		recorder := httptest.NewRecorder()
+
+		api.HandleListProjects(recorder, req)
+
+		assertStatusCode(t, recorder.Code, http.StatusOK)
+
+		var projects []protocol.Project
+		if err := json.NewDecoder(recorder.Body).Decode(&projects); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+
+		if len(projects) != 2 {
+			t.Errorf("expected 2 projects, got %d", len(projects))
+		}
+		if projects[0].ID != "p1" || projects[1].Name != "Project B" {
+			t.Errorf("unexpected project data: %v", projects)
+		}
+	})
+
+	t.Run("return empty list when DB explicitly returns nil", func(t *testing.T) {
+		store := &nilProjectStore{mockStore: &mockStore{}}
+		api := &API{Store: store}
+
+		req := httptest.NewRequest(http.MethodGet, "/projects", nil)
+		req = addUserIDContext(req)
+		recorder := httptest.NewRecorder()
+
+		api.HandleListProjects(recorder, req)
+
+		assertStatusCode(t, recorder.Code, http.StatusOK)
+
+		var projects []protocol.Project
+		if err := json.NewDecoder(recorder.Body).Decode(&projects); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+
+		// Ensure the API converted nil to empty slice []
+		if projects == nil {
+			t.Error("expected empty slice [], got nil")
+		}
+		if len(projects) != 0 {
+			t.Errorf("expected empty list, got len %d", len(projects))
+		}
+	})
+}
+
 func TestNewAPI(t *testing.T) {
 	mock := newMockAnalyzer(protocol.AnalysisResponse{}, nil)
 	store := &mockStore{}
@@ -207,5 +424,10 @@ func sampleThreat() protocol.AnalysisResponse {
 
 func addAuthContext(req *http.Request) *http.Request {
 	ctx := WithProjectID(req.Context(), "test-project-id")
+	return req.WithContext(ctx)
+}
+
+func addUserIDContext(req *http.Request) *http.Request {
+	ctx := WithUserID(req.Context(), "test-user-id")
 	return req.WithContext(ctx)
 }

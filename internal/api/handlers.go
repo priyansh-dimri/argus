@@ -69,7 +69,7 @@ func (api *API) HandleAnalyze(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *API) HandleCreateProject(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value("user_id").(string)
+	userID, ok := GetUserID(r.Context())
 	if !ok || userID == "" {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
@@ -98,7 +98,7 @@ func (api *API) HandleCreateProject(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *API) HandleListProjects(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value("user_id").(string)
+	userID, ok := GetUserID(r.Context())
 	if !ok || userID == "" {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return

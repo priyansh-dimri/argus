@@ -86,3 +86,11 @@ func (m *mockStore) GetProjectIDByKey(ctx context.Context, apiKey string) (strin
 	}
 	return "mock_project_id", nil
 }
+
+type nilProjectStore struct {
+	*mockStore
+}
+
+func (s *nilProjectStore) GetProjectsByUser(ctx context.Context, userID string) ([]protocol.Project, error) {
+	return nil, nil
+}
