@@ -21,12 +21,14 @@ type DB interface {
 }
 
 type SupabaseStore struct {
-	db DB
+	db       DB
+	randRead func(b []byte) (n int, err error)
 }
 
 func NewSupabaseStore(db DB) *SupabaseStore {
 	return &SupabaseStore{
-		db: db,
+		db:       db,
+		randRead: rand.Read,
 	}
 }
 
@@ -77,7 +79,7 @@ func (s *SupabaseStore) SaveThreat(ctx context.Context, projectID string, req pr
 }
 
 func (s *SupabaseStore) CreateProject(ctx context.Context, userID string, name string) (*protocol.Project, error) {
-	apiKey, err := generateAPIKey()
+	apiKey, err := s.generateAPIKey()
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate api key: %w", err)
 	}
@@ -139,9 +141,9 @@ func (s *SupabaseStore) GetProjectsByUser(ctx context.Context, userID string) ([
 	return projects, nil
 }
 
-func generateAPIKey() (string, error) {
+func (s *SupabaseStore) generateAPIKey() (string, error) {
 	bytes := make([]byte, 16)
-	if _, err := rand.Read(bytes); err != nil {
+	if _, err := s.randRead(bytes); err != nil {
 		return "", err
 	}
 	return "argus_" + hex.EncodeToString(bytes), nil

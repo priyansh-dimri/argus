@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -145,7 +146,7 @@ func TestSupabaseStore_ProjectManagement(t *testing.T) {
 	store := NewSupabaseStore(mock)
 	ctx := context.Background()
 
-	t.Run("CreateProject", func(t *testing.T) {
+	t.Run("create project successfully", func(t *testing.T) {
 		userID := "user_123"
 		name := "My First Project"
 		expectedID := "proj_uuid"
@@ -171,7 +172,41 @@ func TestSupabaseStore_ProjectManagement(t *testing.T) {
 		}
 	})
 
-	t.Run("GetProjectIDByKey - Success", func(t *testing.T) {
+	t.Run("detect api key gen failure on create project", func(t *testing.T) {
+		store := NewSupabaseStore(mock)
+		store.randRead = func(b []byte) (n int, err error) {
+			return 0, errors.New("entropy error")
+		}
+
+		_, err := store.CreateProject(ctx, "user_123", "Fail Project")
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if !strings.Contains(err.Error(), "failed to generate api key") {
+			t.Errorf("expected api key generation error, got: %v", err)
+		}
+	})
+
+	t.Run("detect database insertion failure on create project", func(t *testing.T) {
+		mock.ExpectQuery("INSERT INTO projects").
+			WithArgs("user_123", "Fail Project", pgxmock.AnyArg()).
+			WillReturnError(errors.New("db insert failed"))
+
+		_, err := store.CreateProject(ctx, "user_123", "Fail Project")
+
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if !strings.Contains(err.Error(), "failed to insert project") {
+			t.Errorf("expected db insert error, got: %v", err)
+		}
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("expectation not met: %s", err)
+		}
+	})
+
+	t.Run("get project id by key", func(t *testing.T) {
 		apiKey := "argus_valid_key"
 		expectedID := "proj_uuid"
 
@@ -188,7 +223,7 @@ func TestSupabaseStore_ProjectManagement(t *testing.T) {
 		}
 	})
 
-	t.Run("GetProjectIDByKey - Invalid Key", func(t *testing.T) {
+	t.Run("detect invalid key on get project", func(t *testing.T) {
 		apiKey := "argus_invalid_key"
 
 		mock.ExpectQuery("SELECT id FROM projects").
@@ -204,7 +239,23 @@ func TestSupabaseStore_ProjectManagement(t *testing.T) {
 		}
 	})
 
-	t.Run("GetProjectsByUser", func(t *testing.T) {
+	t.Run("detect database error on get project by key", func(t *testing.T) {
+		apiKey := "argus_db_error_key"
+
+		mock.ExpectQuery("SELECT id FROM projects").
+			WithArgs(apiKey).
+			WillReturnError(errors.New("db connection lost"))
+
+		_, err := store.GetProjectIDByKey(ctx, apiKey)
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if !strings.Contains(err.Error(), "database error") {
+			t.Errorf("expected 'database error' wrapper, got %v", err)
+		}
+	})
+
+	t.Run("get project by user successfully", func(t *testing.T) {
 		userID := "user_123"
 
 		rows := pgxmock.NewRows([]string{"id", "user_id", "name", "api_key", "created_at"}).
@@ -224,6 +275,41 @@ func TestSupabaseStore_ProjectManagement(t *testing.T) {
 		}
 		if projects[0].Name != "Project A" {
 			t.Errorf("expected first project name 'Project A', got %s", projects[0].Name)
+		}
+	})
+
+	t.Run("detect query failure on get projects by user", func(t *testing.T) {
+		userID := "user_query_fail"
+
+		mock.ExpectQuery("SELECT id, user_id, name, api_key, created_at FROM projects").
+			WithArgs(userID).
+			WillReturnError(errors.New("deadlock detected"))
+
+		_, err := store.GetProjectsByUser(ctx, userID)
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if !strings.Contains(err.Error(), "failed to query projects") {
+			t.Errorf("expected 'failed to query projects' wrapper, got %v", err)
+		}
+	})
+
+	t.Run("detect scan failure on get projects by user", func(t *testing.T) {
+		userID := "user_scan_fail"
+
+		rows := pgxmock.NewRows([]string{"id", "user_id", "name", "api_key", "created_at"}).
+			AddRow("p1", userID, "Project A", "key_a", "NOT_A_TIMESTAMP")
+
+		mock.ExpectQuery("SELECT id, user_id, name, api_key, created_at FROM projects").
+			WithArgs(userID).
+			WillReturnRows(rows)
+
+		_, err := store.GetProjectsByUser(ctx, userID)
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if !strings.Contains(err.Error(), "failed to scan project row") {
+			t.Errorf("expected 'failed to scan project row' wrapper, got %v", err)
 		}
 	})
 }
