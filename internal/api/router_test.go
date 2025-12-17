@@ -21,24 +21,28 @@ func TestRouter(t *testing.T) {
 		method         string
 		path           string
 		expectedStatus int
+		needsAuth      bool
 	}{
 		{
 			name:           "Valid POST /analyze",
 			method:         http.MethodPost,
 			path:           "/analyze",
 			expectedStatus: http.StatusOK,
+			needsAuth:      true,
 		},
 		{
 			name:           "Invalid Method GET /analyze",
 			method:         http.MethodGet,
 			path:           "/analyze",
 			expectedStatus: http.StatusMethodNotAllowed,
+			needsAuth:      false,
 		},
 		{
 			name:           "Unknown Route POST /random",
 			method:         http.MethodPost,
 			path:           "/random",
 			expectedStatus: http.StatusNotFound,
+			needsAuth:      false,
 		},
 	}
 
@@ -47,6 +51,11 @@ func TestRouter(t *testing.T) {
 			body := strings.NewReader(`{"log": "test"}`)
 			req := httptest.NewRequest(tc.method, tc.path, body)
 			req.Header.Set("Content-Type", "application/json")
+
+			if tc.needsAuth {
+				ctx := WithProjectID(req.Context(), "test-project-id")
+				req = req.WithContext(ctx)
+			}
 
 			recorder := httptest.NewRecorder()
 

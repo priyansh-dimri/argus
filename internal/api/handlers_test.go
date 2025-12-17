@@ -133,6 +133,17 @@ func TestHandlers(t *testing.T) {
 			t.Fatalf("analyzer was not called with expected log %q; got %q", request_body["log"], mock.PrevRequest.Log)
 		}
 	})
+
+	t.Run("return unauthorized when project context is missing", func(t *testing.T) {
+		api := &API{Analyzer: nil, Store: nil}
+
+		req := httptest.NewRequest(http.MethodPost, "/analyze", nil)
+		recorder := httptest.NewRecorder()
+
+		api.HandleAnalyze(recorder, req)
+
+		assertStatusCode(t, recorder.Code, http.StatusUnauthorized)
+	})
 }
 
 func TestNewAPI(t *testing.T) {
@@ -171,6 +182,7 @@ func newJSONRequest(t testing.TB, method, path string, request_body any) (*http.
 
 	req := httptest.NewRequest(method, path, buf)
 	req.Header.Set("Content-Type", "application/json")
+	req = addAuthContext(req)
 	return req, httptest.NewRecorder()
 }
 
@@ -191,4 +203,9 @@ func sampleThreat() protocol.AnalysisResponse {
 		Reason:     &reason,
 		Confidence: &confidence,
 	}
+}
+
+func addAuthContext(req *http.Request) *http.Request {
+	ctx := WithProjectID(req.Context(), "test-project-id")
+	return req.WithContext(ctx)
 }
