@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Bell, Menu, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Sidebar } from "./sidebar";
 import { useState } from "react";
@@ -64,7 +64,6 @@ export function Header() {
             </p>
           </div>
           <Avatar className="h-9 w-9 border border-white/10">
-            <AvatarImage src="/avatars/01.png" alt="@admin" />
             <AvatarFallback className="bg-neon-blue/10 text-neon-blue text-xs font-bold">
               AD
             </AvatarFallback>
