@@ -47,7 +47,8 @@ func main() {
 	core := analyzer.NewAnalyzer(aiClient)
 	handler := api.NewAPI(core, store)
 
-	router := api.NewRouter(handler)
+	authMiddleware := api.NewMiddleware(store)
+	router := api.NewRouter(handler, authMiddleware)
 
 	logger.Info("Starting Argus API", "port", port)
 	if err := http.ListenAndServe(":"+port, router); err != nil {

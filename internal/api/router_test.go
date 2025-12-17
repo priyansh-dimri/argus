@@ -12,9 +12,14 @@ import (
 func TestRouter(t *testing.T) {
 	mock := newMockAnalyzer(protocol.AnalysisResponse{}, nil)
 	store := &mockStore{}
-	api := NewAPI(mock, store)
+	apiHandler := NewAPI(mock, store)
 
-	router := NewRouter(api)
+	mw := &Middleware{
+		Store:     store,
+		JWTSecret: "test-secret",
+	}
+
+	router := NewRouter(apiHandler, mw)
 
 	tests := []struct {
 		name           string
@@ -53,8 +58,7 @@ func TestRouter(t *testing.T) {
 			req.Header.Set("Content-Type", "application/json")
 
 			if tc.needsAuth {
-				ctx := WithProjectID(req.Context(), "test-project-id")
-				req = req.WithContext(ctx)
+				req.Header.Set("Authorization", "Bearer argus_test_key")
 			}
 
 			recorder := httptest.NewRecorder()
