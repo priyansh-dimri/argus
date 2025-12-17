@@ -45,12 +45,6 @@ jobs:
 
       - name: Run audit
         run: make audit
-      
-      - name: Generate coverage badge
-        uses: tj-actions/coverage-badge-go@v2
-        with:
-          filename: coverage.out
-          output: ./coverage-badge.svg
 
       - name: Save Go cache
         if: ${{ github.ref == 'refs/heads/main' }}
@@ -60,3 +54,30 @@ jobs:
             ~/.cache/go-build
             ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}-${{ github.run_id }}
+      
+      - name: Go Coverage Badge
+        uses: tj-actions/coverage-badge-go@v3
+        with:
+          filename: coverage.out
+
+      - name: Verify Changed files
+        uses: tj-actions/verify-changed-files@v16
+        id: verify-changed-files
+        with:
+          files: README.md
+
+      - name: Commit changes
+        if: steps.verify-changed-files.outputs.files_changed == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add README.md
+          git commit -m "chore: update coverage badge"
+
+      - name: Push changes
+        if: steps.verify-changed-files.outputs.files_changed == 'true'
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ github.token }}
+          branch: ${{ github.head_ref }}
+
