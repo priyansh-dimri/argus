@@ -50,8 +50,10 @@ func main() {
 	authMiddleware := api.NewMiddleware(store)
 	router := api.NewRouter(handler, authMiddleware)
 
+	corsHandler := authMiddleware.CORS(router)
+
 	logger.Info("Starting Argus API", "port", port)
-	if err := http.ListenAndServe(":"+port, router); err != nil {
+	if err := http.ListenAndServe(":"+port, corsHandler); err != nil {
 		logger.Error("Server failed", err)
 		os.Exit(1)
 	}

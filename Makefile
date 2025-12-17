@@ -57,6 +57,11 @@ test/integration:
 	go test -v -tags=integration -coverpkg=./internal/analyzer -coverprofile=/tmp/integration_coverage.out ./cmd/integration
 	go tool cover -html=/tmp/integration_coverage.out
 
+## test/ci-cover: run tests with coverage for CI badge
+.PHONY: test/ci-cover
+test/ci-cover:
+	go test -v -buildvcs -covermode=atomic -coverprofile=coverage.raw.out ./...
+
 # ==================================================================================== #
 # DEVELOPMENT
 # ==================================================================================== #

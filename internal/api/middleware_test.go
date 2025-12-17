@@ -191,3 +191,58 @@ func TestAuthDashboard(t *testing.T) {
 		}
 	})
 }
+
+func TestCORS(t *testing.T) {
+	store := &mockAuthStore{}
+	mw := api.NewMiddleware(store)
+
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	t.Run("Preflight OPTIONS returns 204 with CORS headers", func(t *testing.T) {
+		req := httptest.NewRequest("OPTIONS", "/projects", nil)
+		req.Header.Set("Origin", "http://localhost:3000")
+		req.Header.Set("Access-Control-Request-Method", "GET")
+		req.Header.Set("Access-Control-Request-Headers", "Authorization")
+
+		rec := httptest.NewRecorder()
+		mw.CORS(nextHandler).ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusNoContent {
+			t.Errorf("Expected 204, got %d", rec.Code)
+		}
+		if rec.Header().Get("Access-Control-Allow-Origin") != "http://localhost:3000" {
+			t.Errorf("Missing/wrong Access-Control-Allow-Origin: %q", rec.Header().Get("Access-Control-Allow-Origin"))
+		}
+		if rec.Header().Get("Access-Control-Allow-Methods") != "GET, POST, OPTIONS" {
+			t.Errorf("Missing/wrong Access-Control-Allow-Methods: %q", rec.Header().Get("Access-Control-Allow-Methods"))
+		}
+		if rec.Header().Get("Access-Control-Allow-Headers") != "Authorization, Content-Type" {
+			t.Errorf("Missing/wrong Access-Control-Allow-Headers: %q", rec.Header().Get("Access-Control-Allow-Headers"))
+		}
+	})
+
+	t.Run("Non-OPTIONS passes through to next handler", func(t *testing.T) {
+		request := httptest.NewRequest("GET", "/projects", nil)
+		recorder := httptest.NewRecorder()
+
+		mw.CORS(nextHandler).ServeHTTP(recorder, request)
+
+		if recorder.Code != http.StatusOK {
+			t.Errorf("Expected 200 from next handler, got %d", recorder.Code)
+		}
+	})
+
+	t.Run("Sets Vary header", func(t *testing.T) {
+		request := httptest.NewRequest("GET", "/projects", nil)
+		request.Header.Set("Origin", "http://localhost:3000")
+		recorder := httptest.NewRecorder()
+
+		mw.CORS(nextHandler).ServeHTTP(recorder, request)
+
+		if recorder.Header().Get("Vary") != "Origin" {
+			t.Errorf("Expected Vary: Origin, got %q", recorder.Header().Get("Vary"))
+		}
+	})
+}

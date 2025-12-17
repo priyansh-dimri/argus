@@ -38,11 +38,18 @@ jobs:
       - name: Download modules (pre-fill module cache)
         run: go mod download
 
-      - name: Run tests
-        run: make test
+      - name: Run tests with coverage for badge
+        run: |
+          make test/ci-cover
+          grep -v -E '(gemini.go|main.go|rules.go)' coverage.raw.out > coverage.out
 
       - name: Run audit
         run: make audit
+      
+      - name: Generate coverage badge
+        uses: tj-actions/coverage-badge-go@v2
+        with:
+          filename: coverage.out
 
       - name: Save Go cache
         if: ${{ github.ref == 'refs/heads/main' }}

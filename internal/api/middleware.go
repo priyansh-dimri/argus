@@ -16,7 +16,7 @@ type AuthStore interface {
 }
 
 type Middleware struct {
-	Store AuthStore
+	Store     AuthStore
 	JWTSecret string
 }
 
@@ -62,6 +62,7 @@ func (m *Middleware) AuthDashboard(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
+			logger.Info("missing token", "auth-header", authHeader)
 			http.Error(w, "Unauthorized: Missing Token", http.StatusUnauthorized)
 			return
 		}
@@ -91,4 +92,24 @@ func (m *Middleware) AuthDashboard(next http.HandlerFunc) http.HandlerFunc {
 
 		http.Error(w, "Unauthorized: Token missing subject", http.StatusUnauthorized)
 	}
+}
+
+func (m *Middleware) CORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+		if origin != "" {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+		}
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.Header().Set("Vary", "Origin")
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
