@@ -50,6 +50,7 @@ jobs:
         uses: tj-actions/coverage-badge-go@v2
         with:
           filename: coverage.out
+          output: ./coverage-badge.svg
 
       - name: Save Go cache
         if: ${{ github.ref == 'refs/heads/main' }}
