@@ -141,9 +141,9 @@ func (s *SupabaseStore) GetProjectsByUser(ctx context.Context, userID string) ([
 	return projects, nil
 }
 
-func (s *SupabaseStore) UpdateProjectName(ctx context.Context, projectID string, newName string) error {
-	const query = `UPDATE projects SET name = $1 WHERE id = $2`
-	tag, err := s.db.Exec(ctx, query, newName, projectID)
+func (s *SupabaseStore) UpdateProjectName(ctx context.Context, userID string, projectID string, newName string) error {
+	const query = `UPDATE projects SET name = $1 WHERE id = $2 AND user_id = $3`
+	tag, err := s.db.Exec(ctx, query, newName, projectID, userID)
 	if err != nil {
 		return fmt.Errorf("failed to update project name: %w", err)
 	}
@@ -153,14 +153,14 @@ func (s *SupabaseStore) UpdateProjectName(ctx context.Context, projectID string,
 	return nil
 }
 
-func (s *SupabaseStore) RotateAPIKey(ctx context.Context, projectID string) (string, error) {
+func (s *SupabaseStore) RotateAPIKey(ctx context.Context, userID string, projectID string) (string, error) {
 	newKey, err := s.generateAPIKey()
 	if err != nil {
 		return "", fmt.Errorf("failed to generate new key: %w", err)
 	}
 
-	const query = `UPDATE projects SET api_key = $1 WHERE id = $2`
-	tag, err := s.db.Exec(ctx, query, newKey, projectID)
+	const query = `UPDATE projects SET api_key = $1 WHERE id = $2 AND user_id = $3`
+	tag, err := s.db.Exec(ctx, query, newKey, projectID, userID)
 	if err != nil {
 		return "", fmt.Errorf("failed to update api key: %w", err)
 	}
@@ -170,9 +170,9 @@ func (s *SupabaseStore) RotateAPIKey(ctx context.Context, projectID string) (str
 	return newKey, nil
 }
 
-func (s *SupabaseStore) DeleteProject(ctx context.Context, projectID string) error {
-	const query = `DELETE FROM projects WHERE id = $1`
-	tag, err := s.db.Exec(ctx, query, projectID)
+func (s *SupabaseStore) DeleteProject(ctx context.Context, userID string, projectID string) error {
+	const query = `DELETE FROM projects WHERE id = $1 AND user_id = $2`
+	tag, err := s.db.Exec(ctx, query, projectID, userID)
 	if err != nil {
 		return fmt.Errorf("failed to delete project: %w", err)
 	}

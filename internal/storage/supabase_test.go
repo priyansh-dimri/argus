@@ -315,14 +315,15 @@ func TestSupabaseStore_ProjectManagement(t *testing.T) {
 	})
 
 	t.Run("update project name successfully", func(t *testing.T) {
+		userID := "user_123"
 		projectID := "project_123"
 		newName := "Renamed Project"
 
 		mock.ExpectExec("UPDATE projects SET name").
-			WithArgs(newName, projectID).
+			WithArgs(newName, projectID, userID).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
-		err := store.UpdateProjectName(ctx, projectID, newName)
+		err := store.UpdateProjectName(ctx, userID, projectID, newName)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -335,12 +336,13 @@ func TestSupabaseStore_ProjectManagement(t *testing.T) {
 	t.Run("detect database error on update project name", func(t *testing.T) {
 		projectID := "project_123"
 		newName := "Renamed Project"
+		userID := "user_123"
 
 		mock.ExpectExec("UPDATE projects SET name").
-			WithArgs(newName, projectID).
+			WithArgs(newName, projectID, userID).
 			WillReturnError(errors.New("db update failed"))
 
-		err := store.UpdateProjectName(ctx, projectID, newName)
+		err := store.UpdateProjectName(ctx, userID, projectID, newName)
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
@@ -354,14 +356,15 @@ func TestSupabaseStore_ProjectManagement(t *testing.T) {
 	})
 
 	t.Run("detect not found on update project name", func(t *testing.T) {
+		userID := "user_123"
 		projectID := "proj_missing"
 		newName := "Renamed Project"
 
 		mock.ExpectExec("UPDATE projects SET name").
-			WithArgs(newName, projectID).
+			WithArgs(newName, projectID, userID).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 0))
 
-		err := store.UpdateProjectName(ctx, projectID, newName)
+		err := store.UpdateProjectName(ctx, userID, projectID, newName)
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
@@ -376,6 +379,7 @@ func TestSupabaseStore_ProjectManagement(t *testing.T) {
 
 	t.Run("rotate api key successfully", func(t *testing.T) {
 		projectID := "project_123"
+		userID := "user_123"
 
 		fixed := []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f}
 		expectedKey := "argus_" + hex.EncodeToString(fixed)
@@ -387,10 +391,10 @@ func TestSupabaseStore_ProjectManagement(t *testing.T) {
 		}
 
 		mock.ExpectExec("UPDATE projects SET api_key").
-			WithArgs(expectedKey, projectID).
+			WithArgs(expectedKey, projectID, userID).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
-		newKey, err := store.RotateAPIKey(ctx, projectID)
+		newKey, err := store.RotateAPIKey(ctx, userID, projectID)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -405,13 +409,14 @@ func TestSupabaseStore_ProjectManagement(t *testing.T) {
 
 	t.Run("detect api key generation failure on rotate api key", func(t *testing.T) {
 		projectID := "project_123"
+		userID := "user_123"
 
 		store := NewSupabaseStore(mock)
 		store.randRead = func(b []byte) (n int, err error) {
 			return 0, errors.New("entropy error")
 		}
 
-		_, err := store.RotateAPIKey(ctx, projectID)
+		_, err := store.RotateAPIKey(ctx, userID, projectID)
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
@@ -422,6 +427,7 @@ func TestSupabaseStore_ProjectManagement(t *testing.T) {
 
 	t.Run("detect database error on rotate api key", func(t *testing.T) {
 		projectID := "project_123"
+		userID := "user_123"
 
 		fixed := []byte{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99}
 		expectedKey := "argus_" + hex.EncodeToString(fixed)
@@ -433,10 +439,10 @@ func TestSupabaseStore_ProjectManagement(t *testing.T) {
 		}
 
 		mock.ExpectExec("UPDATE projects SET api_key").
-			WithArgs(expectedKey, projectID).
+			WithArgs(expectedKey, projectID, userID).
 			WillReturnError(errors.New("db update failed"))
 
-		_, err := store.RotateAPIKey(ctx, projectID)
+		_, err := store.RotateAPIKey(ctx, userID, projectID)
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
@@ -451,6 +457,7 @@ func TestSupabaseStore_ProjectManagement(t *testing.T) {
 
 	t.Run("detect not found on rotate api key", func(t *testing.T) {
 		projectID := "proj_missing"
+		userID := "user_123"
 
 		fixed := []byte{0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f}
 		expectedKey := "argus_" + hex.EncodeToString(fixed)
@@ -462,10 +469,10 @@ func TestSupabaseStore_ProjectManagement(t *testing.T) {
 		}
 
 		mock.ExpectExec("UPDATE projects SET api_key").
-			WithArgs(expectedKey, projectID).
+			WithArgs(expectedKey, projectID, userID).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 0))
 
-		_, err := store.RotateAPIKey(ctx, projectID)
+		_, err := store.RotateAPIKey(ctx, userID, projectID)
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
@@ -480,12 +487,13 @@ func TestSupabaseStore_ProjectManagement(t *testing.T) {
 
 	t.Run("delete project successfully", func(t *testing.T) {
 		projectID := "project_123"
+		userID := "user_123"
 
 		mock.ExpectExec("DELETE FROM projects").
-			WithArgs(projectID).
+			WithArgs(projectID, userID).
 			WillReturnResult(pgxmock.NewResult("DELETE", 1))
 
-		err := store.DeleteProject(ctx, projectID)
+		err := store.DeleteProject(ctx, userID, projectID)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -497,12 +505,13 @@ func TestSupabaseStore_ProjectManagement(t *testing.T) {
 
 	t.Run("detect database error on delete project", func(t *testing.T) {
 		projectID := "project_123"
+		userID := "user_123"
 
 		mock.ExpectExec("DELETE FROM projects").
-			WithArgs(projectID).
+			WithArgs(projectID, userID).
 			WillReturnError(errors.New("db delete failed"))
 
-		err := store.DeleteProject(ctx, projectID)
+		err := store.DeleteProject(ctx, userID, projectID)
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
@@ -517,12 +526,13 @@ func TestSupabaseStore_ProjectManagement(t *testing.T) {
 
 	t.Run("detect not found on delete project", func(t *testing.T) {
 		projectID := "proj_missing"
+		userID := "user_123"
 
 		mock.ExpectExec("DELETE FROM projects").
-			WithArgs(projectID).
+			WithArgs(projectID, userID).
 			WillReturnResult(pgxmock.NewResult("DELETE", 0))
 
-		err := store.DeleteProject(ctx, projectID)
+		err := store.DeleteProject(ctx, userID, projectID)
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
