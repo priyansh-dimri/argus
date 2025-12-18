@@ -87,6 +87,21 @@ func (m *mockStore) GetProjectIDByKey(ctx context.Context, apiKey string) (strin
 	return "mock_project_id", nil
 }
 
+func (m *mockStore) UpdateProjectName(ctx context.Context, userID string, projectID string, newName string) error {
+	return m.Err
+}
+
+func (m *mockStore) RotateAPIKey(ctx context.Context, userID string, projectID string) (string, error) {
+	if m.Err != nil {
+		return "", m.Err
+	}
+	return "argus_mock_rotated_key", nil
+}
+
+func (m *mockStore) DeleteProject(ctx context.Context, userID string, projectID string) error {
+	return m.Err
+}
+
 type nilProjectStore struct {
 	*mockStore
 }

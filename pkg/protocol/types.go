@@ -34,6 +34,23 @@ type CreateProjectResponse struct {
 	Project Project `json:"project"`
 }
 
+type UpdateProjectNameRequest struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type DeleteProjectRequest struct {
+	ID string `json:"id"`
+}
+
+type RotateProjectAPIKeyRequest struct {
+	ID string `json:"id"`
+}
+
+type RotateProjectAPIKeyResponse struct {
+	APIKey string `json:"api_key"`
+}
+
 type DashboardStats struct {
 	TotalRequests   int            `json:"total_requests"`
 	BlockedRequests int            `json:"blocked_requests"`

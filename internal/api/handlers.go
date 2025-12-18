@@ -18,6 +18,9 @@ type Store interface {
 	CreateProject(ctx context.Context, userID string, name string) (*protocol.Project, error)
 	GetProjectsByUser(ctx context.Context, userID string) ([]protocol.Project, error)
 	GetProjectIDByKey(ctx context.Context, apiKey string) (string, error)
+	UpdateProjectName(ctx context.Context, userID string, projectID string, newName string) error
+	RotateAPIKey(ctx context.Context, userID string, projectID string) (string, error)
+	DeleteProject(ctx context.Context, userID string, projectID string) error
 }
 
 type API struct {
@@ -117,4 +120,74 @@ func (api *API) HandleListProjects(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(projects)
+}
+
+func (api *API) HandleUpdateProject(w http.ResponseWriter, r *http.Request) {
+	userID, ok := GetUserID(r.Context())
+	if !ok || userID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var req protocol.UpdateProjectNameRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid body", http.StatusBadRequest)
+		return
+	}
+
+	err := api.Store.UpdateProjectName(r.Context(), userID, req.ID, req.Name)
+	if err != nil {
+		api.ErrorReporter("Update failed", "error", err)
+		http.Error(w, "Update failed", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (api *API) HandleDeleteProject(w http.ResponseWriter, r *http.Request) {
+	userID, ok := GetUserID(r.Context())
+	if !ok || userID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var req protocol.DeleteProjectRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid body", http.StatusBadRequest)
+		return
+	}
+
+	if err := api.Store.DeleteProject(r.Context(), userID, req.ID); err != nil {
+		api.ErrorReporter("Delete failed", "error", err)
+		http.Error(w, "Delete failed", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (api *API) HandleRotateKey(w http.ResponseWriter, r *http.Request) {
+	userID, ok := GetUserID(r.Context())
+	if !ok || userID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var req protocol.RotateProjectAPIKeyRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid body", http.StatusBadRequest)
+		return
+	}
+
+	newKey, err := api.Store.RotateAPIKey(r.Context(), userID, req.ID)
+	if err != nil {
+		api.ErrorReporter("Rotation failed", "error", err)
+		http.Error(w, "Rotation failed", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(protocol.RotateProjectAPIKeyResponse{APIKey: newKey})
 }

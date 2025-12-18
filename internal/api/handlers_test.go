@@ -363,6 +363,224 @@ func TestHandleListProjects(t *testing.T) {
 	})
 }
 
+func TestHandleUpdateProject(t *testing.T) {
+	t.Run("return unauthorized when user_id is missing", func(t *testing.T) {
+		api := &API{Store: &mockStore{}}
+		req := httptest.NewRequest(http.MethodPost, "/projects/update", nil)
+		recorder := httptest.NewRecorder()
+
+		api.HandleUpdateProject(recorder, req)
+
+		assertStatusCode(t, recorder.Code, http.StatusUnauthorized)
+	})
+
+	t.Run("return error for invalid JSON body", func(t *testing.T) {
+		api := &API{Store: &mockStore{}}
+		req := httptest.NewRequest(http.MethodPost, "/projects/update", strings.NewReader("{bad json"))
+		req = addUserIDContext(req)
+		recorder := httptest.NewRecorder()
+
+		api.HandleUpdateProject(recorder, req)
+
+		assertStatusCode(t, recorder.Code, http.StatusBadRequest)
+	})
+
+	t.Run("return internal error when storage fails", func(t *testing.T) {
+		store := &mockStore{Err: errors.New("db failure")}
+		errorChan := make(chan error, 1)
+		api := &API{
+			Store: store,
+			ErrorReporter: func(msg string, args ...any) {
+				if len(args) > 1 {
+					if err, ok := args[1].(error); ok {
+						errorChan <- err
+					}
+				}
+			},
+		}
+
+		body := strings.NewReader(`{"id": "proj_1", "name": "New Name"}`)
+		req := httptest.NewRequest(http.MethodPost, "/projects/update", body)
+		req = addUserIDContext(req)
+		recorder := httptest.NewRecorder()
+
+		api.HandleUpdateProject(recorder, req)
+
+		assertStatusCode(t, recorder.Code, http.StatusInternalServerError)
+
+		select {
+		case err := <-errorChan:
+			if err.Error() != "db failure" {
+				t.Errorf("expected 'db failure', got %v", err)
+			}
+		case <-time.After(100 * time.Millisecond):
+			t.Fatal("Timed out waiting for error report")
+		}
+	})
+
+	t.Run("update project successfully", func(t *testing.T) {
+		store := &mockStore{}
+		api := &API{Store: store}
+
+		body := strings.NewReader(`{"id": "proj_1", "name": "Updated Name"}`)
+		req := httptest.NewRequest(http.MethodPost, "/projects/update", body)
+		req = addUserIDContext(req)
+		recorder := httptest.NewRecorder()
+
+		api.HandleUpdateProject(recorder, req)
+
+		assertStatusCode(t, recorder.Code, http.StatusOK)
+	})
+}
+
+func TestHandleDeleteProject(t *testing.T) {
+	t.Run("return unauthorized when user_id is missing", func(t *testing.T) {
+		api := &API{Store: &mockStore{}}
+		req := httptest.NewRequest(http.MethodPost, "/projects/delete", nil)
+		recorder := httptest.NewRecorder()
+
+		api.HandleDeleteProject(recorder, req)
+
+		assertStatusCode(t, recorder.Code, http.StatusUnauthorized)
+	})
+
+	t.Run("return error for invalid JSON body", func(t *testing.T) {
+		api := &API{Store: &mockStore{}}
+		req := httptest.NewRequest(http.MethodPost, "/projects/delete", strings.NewReader("{bad json"))
+		req = addUserIDContext(req)
+		recorder := httptest.NewRecorder()
+
+		api.HandleDeleteProject(recorder, req)
+
+		assertStatusCode(t, recorder.Code, http.StatusBadRequest)
+	})
+
+	t.Run("return internal error when storage fails", func(t *testing.T) {
+		store := &mockStore{Err: errors.New("db failure")}
+		errorChan := make(chan error, 1)
+		api := &API{
+			Store: store,
+			ErrorReporter: func(msg string, args ...any) {
+				if len(args) > 1 {
+					if err, ok := args[1].(error); ok {
+						errorChan <- err
+					}
+				}
+			},
+		}
+
+		body := strings.NewReader(`{"id": "proj_1"}`)
+		req := httptest.NewRequest(http.MethodPost, "/projects/delete", body)
+		req = addUserIDContext(req)
+		recorder := httptest.NewRecorder()
+
+		api.HandleDeleteProject(recorder, req)
+
+		assertStatusCode(t, recorder.Code, http.StatusInternalServerError)
+
+		select {
+		case err := <-errorChan:
+			if err.Error() != "db failure" {
+				t.Errorf("expected 'db failure', got %v", err)
+			}
+		case <-time.After(100 * time.Millisecond):
+			t.Fatal("Timed out waiting for error report")
+		}
+	})
+
+	t.Run("delete project successfully", func(t *testing.T) {
+		store := &mockStore{}
+		api := &API{Store: store}
+
+		body := strings.NewReader(`{"id": "proj_1"}`)
+		req := httptest.NewRequest(http.MethodPost, "/projects/delete", body)
+		req = addUserIDContext(req)
+		recorder := httptest.NewRecorder()
+
+		api.HandleDeleteProject(recorder, req)
+
+		assertStatusCode(t, recorder.Code, http.StatusOK)
+	})
+}
+
+func TestHandleRotateKey(t *testing.T) {
+	t.Run("return unauthorized when user_id is missing", func(t *testing.T) {
+		api := &API{Store: &mockStore{}}
+		req := httptest.NewRequest(http.MethodPost, "/projects/rotate-key", nil)
+		recorder := httptest.NewRecorder()
+
+		api.HandleRotateKey(recorder, req)
+
+		assertStatusCode(t, recorder.Code, http.StatusUnauthorized)
+	})
+
+	t.Run("return error for invalid JSON body", func(t *testing.T) {
+		api := &API{Store: &mockStore{}}
+		req := httptest.NewRequest(http.MethodPost, "/projects/rotate-key", strings.NewReader("{bad json"))
+		req = addUserIDContext(req)
+		recorder := httptest.NewRecorder()
+
+		api.HandleRotateKey(recorder, req)
+
+		assertStatusCode(t, recorder.Code, http.StatusBadRequest)
+	})
+
+	t.Run("return internal error when storage fails", func(t *testing.T) {
+		store := &mockStore{Err: errors.New("db failure")}
+		errorChan := make(chan error, 1)
+		api := &API{
+			Store: store,
+			ErrorReporter: func(msg string, args ...any) {
+				if len(args) > 1 {
+					if err, ok := args[1].(error); ok {
+						errorChan <- err
+					}
+				}
+			},
+		}
+
+		body := strings.NewReader(`{"id": "proj_1"}`)
+		req := httptest.NewRequest(http.MethodPost, "/projects/rotate-key", body)
+		req = addUserIDContext(req)
+		recorder := httptest.NewRecorder()
+
+		api.HandleRotateKey(recorder, req)
+
+		assertStatusCode(t, recorder.Code, http.StatusInternalServerError)
+
+		select {
+		case err := <-errorChan:
+			if err.Error() != "db failure" {
+				t.Errorf("expected 'db failure', got %v", err)
+			}
+		case <-time.After(100 * time.Millisecond):
+			t.Fatal("Timed out waiting for error report")
+		}
+	})
+
+	t.Run("rotate key successfully", func(t *testing.T) {
+		store := &mockStore{}
+		api := &API{Store: store}
+
+		body := strings.NewReader(`{"id": "proj_1"}`)
+		req := httptest.NewRequest(http.MethodPost, "/projects/rotate-key", body)
+		req = addUserIDContext(req)
+		recorder := httptest.NewRecorder()
+
+		api.HandleRotateKey(recorder, req)
+
+		assertStatusCode(t, recorder.Code, http.StatusOK)
+
+		var resp protocol.RotateProjectAPIKeyResponse
+		if err := json.NewDecoder(recorder.Body).Decode(&resp); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+		if resp.APIKey == "" {
+			t.Errorf("expected non-empty api key in response")
+		}
+	})
+}
+
 func TestNewAPI(t *testing.T) {
 	mock := newMockAnalyzer(protocol.AnalysisResponse{}, nil)
 	store := &mockStore{}
