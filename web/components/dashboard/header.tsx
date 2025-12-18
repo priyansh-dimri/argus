@@ -5,10 +5,27 @@ import { Menu } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Sidebar } from "./sidebar";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { User } from "@supabase/supabase-js";
 
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const supabase = createClient();
+
+  useEffect(() => {
+    async function getUser() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
+    }
+    getUser();
+  }, [supabase]);
+
+  const email = user?.email || "";
+  const initials = email.slice(0, 2).toUpperCase() || "US";
 
   return (
     <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-white/5 bg-background/50 px-6 backdrop-blur-xl">
@@ -33,20 +50,15 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="h-8 w-[1px] bg-white/10" />
-
         <div className="flex items-center gap-3">
           <div className="text-right hidden sm:block">
-            <p className="text-sm font-medium leading-none text-white">
-              Admin User
-            </p>
             <p className="text-xs text-muted-foreground mt-1">
-              admin@argus.com
+              {email || "Loading..."}
             </p>
           </div>
           <Avatar className="h-9 w-9 border border-white/10">
             <AvatarFallback className="bg-neon-blue/10 text-neon-blue text-xs font-bold">
-              AD
+              {initials}
             </AvatarFallback>
           </Avatar>
         </div>
