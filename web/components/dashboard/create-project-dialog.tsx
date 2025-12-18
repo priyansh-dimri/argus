@@ -18,9 +18,13 @@ import type { Project } from "@/hooks/use-projects";
 
 interface CreateProjectDialogProps {
   onCreate: (name: string) => Promise<Project>;
+  onClose?: () => void;
 }
 
-export function CreateProjectDialog({ onCreate }: CreateProjectDialogProps) {
+export function CreateProjectDialog({
+  onCreate,
+  onClose,
+}: CreateProjectDialogProps) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,6 +32,15 @@ export function CreateProjectDialog({ onCreate }: CreateProjectDialogProps) {
     null
   );
   const [copied, setCopied] = useState(false);
+
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen) {
+      setNewProject(null);
+      setName("");
+      if (onClose) onClose();
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,13 +62,12 @@ export function CreateProjectDialog({ onCreate }: CreateProjectDialogProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleClose = () => {
-    setOpen(false);
-    setNewProject(null);
+  const handleDone = () => {
+    handleOpenChange(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button
           size="sm"
@@ -130,7 +142,7 @@ export function CreateProjectDialog({ onCreate }: CreateProjectDialogProps) {
 
             <DialogFooter>
               <Button
-                onClick={handleClose}
+                onClick={handleDone}
                 className="w-full bg-white/10 hover:bg-white/20 text-white"
               >
                 Done

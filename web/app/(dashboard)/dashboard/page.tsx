@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useState } from "react";
 
 export default function DashboardPage() {
   const {
@@ -22,8 +23,10 @@ export default function DashboardPage() {
     setSelectedProject,
     createProject,
     loading: projectsLoading,
+    refreshProjects,
   } = useProjects();
   const { threats } = useThreats(selectedProject?.id);
+  const [isCreatingFirstProject, setIsCreatingFirstProject] = useState(false);
 
   if (projectsLoading) {
     return (
@@ -33,7 +36,7 @@ export default function DashboardPage() {
     );
   }
 
-  if (projects.length === 0) {
+  if (projects.length === 0 || isCreatingFirstProject) {
     return (
       <div className="flex flex-col h-[70vh] items-center justify-center text-center space-y-6">
         <div className="h-20 w-20 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
@@ -46,7 +49,16 @@ export default function DashboardPage() {
             monitoring threats.
           </p>
         </div>
-        <CreateProjectDialog onCreate={createProject} />
+        <CreateProjectDialog
+          onCreate={async (name) => {
+            setIsCreatingFirstProject(true);
+            return createProject(name, true);
+          }}
+          onClose={() => {
+            setIsCreatingFirstProject(false);
+            refreshProjects();
+          }}
+        />
       </div>
     );
   }
@@ -79,7 +91,7 @@ export default function DashboardPage() {
           </Select>
         </div>
 
-        <CreateProjectDialog onCreate={createProject} />
+        <CreateProjectDialog onCreate={(name) => createProject(name, false)} />
       </div>
 
       <StatsCards threats={threats} />

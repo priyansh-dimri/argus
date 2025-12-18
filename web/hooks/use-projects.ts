@@ -21,23 +21,25 @@ export function useProjects() {
       const data = await fetchAPI("/projects");
       setProjects(data || []);
 
-      if (data?.length > 0 && !selectedProject) {
-        setSelectedProject(data[0]);
+      if (data?.length > 0) {
+        setSelectedProject((current) => current || data[0]);
       }
     } catch (err) {
       console.error("Failed to fetch projects", err);
     } finally {
       setLoading(false);
     }
-  }, [selectedProject]);
+  }, []);
 
-  const createProject = async (name: string) => {
+  const createProject = async (name: string, skipRefresh = false) => {
     try {
       const res = await fetchAPI("/projects", {
         method: "POST",
         body: JSON.stringify({ name }),
       });
-      await refreshProjects();
+      if (!skipRefresh) {
+        await refreshProjects();
+      }
       return res.project;
     } catch (err) {
       throw err;
