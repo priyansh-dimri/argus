@@ -35,7 +35,7 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
   const navItems = [
     { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
     { name: "Live Threats", href: "/dashboard/threats", icon: Activity },
-    { name: "Settings", href: "/dashboard/settings", icon: Settings },
+    { name: "Settings", href: "/settings", icon: Settings },
   ];
 
   return (

@@ -21,9 +21,15 @@ export function useProjects() {
       const data = await fetchAPI("/projects");
       setProjects(data || []);
 
-      if (data?.length > 0) {
-        setSelectedProject((current) => current || data[0]);
-      }
+      setSelectedProject((current) => {
+        if (!current && data?.length > 0) return data[0];
+        if (current) {
+          return (
+            data.find((p: Project) => p.id === current.id) || data[0] || null
+          );
+        }
+        return null;
+      });
     } catch (err) {
       console.error("Failed to fetch projects", err);
     } finally {
@@ -31,6 +37,7 @@ export function useProjects() {
     }
   }, []);
 
+  // 1. Create
   const createProject = async (name: string, skipRefresh = false) => {
     try {
       const res = await fetchAPI("/projects", {
@@ -46,6 +53,52 @@ export function useProjects() {
     }
   };
 
+  const updateProjectName = async (id: string, name: string) => {
+    try {
+      await fetchAPI("/projects", {
+        method: "PATCH",
+        body: JSON.stringify({ id, name }),
+      });
+      await refreshProjects();
+    } catch (err) {
+      console.error("Failed to update project", err);
+      throw err;
+    }
+  };
+
+  const deleteProject = async (id: string) => {
+    try {
+      await fetchAPI(`/projects`, {
+        method: "DELETE",
+        body: JSON.stringify({ id }),
+      });
+
+      if (selectedProject?.id === id) {
+        setSelectedProject(null);
+      }
+
+      await refreshProjects();
+    } catch (err) {
+      console.error("Failed to delete project", err);
+      throw err;
+    }
+  };
+
+  const rotateApiKey = async (id: string) => {
+    try {
+      const res = await fetchAPI("/rotate-key", {
+        method: "POST",
+        body: JSON.stringify({ id }),
+      });
+
+      await refreshProjects();
+      return res.api_key; // Return new key so UI can display it once
+    } catch (err) {
+      console.error("Failed to rotate API key", err);
+      throw err;
+    }
+  };
+
   useEffect(() => {
     refreshProjects();
   }, [refreshProjects]);
@@ -55,6 +108,9 @@ export function useProjects() {
     selectedProject,
     setSelectedProject,
     createProject,
+    updateProjectName,
+    deleteProject,
+    rotateApiKey,
     loading,
     refreshProjects,
   };

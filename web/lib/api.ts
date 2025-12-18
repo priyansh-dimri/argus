@@ -28,5 +28,6 @@ export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
     throw new Error(error || "API Request Failed");
   }
 
-  return res.json();
+  const text = await res.text();
+  return text ? JSON.parse(text) : {};
 }
