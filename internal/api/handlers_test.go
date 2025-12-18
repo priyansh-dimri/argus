@@ -241,7 +241,6 @@ func TestHandleCreateProject(t *testing.T) {
 func TestHandleListProjects(t *testing.T) {
 	t.Run("return unauthorized when user_id is missing", func(t *testing.T) {
 		api := &API{Store: &mockStore{}}
-		// Request without addUserIDContext
 		req := httptest.NewRequest(http.MethodGet, "/projects", nil)
 		recorder := httptest.NewRecorder()
 
@@ -283,7 +282,6 @@ func TestHandleListProjects(t *testing.T) {
 	})
 
 	t.Run("return empty list when no projects found", func(t *testing.T) {
-		// Mock returns nil list by default if MockProjectList is nil
 		store := &mockStore{}
 		api := &API{Store: store}
 
@@ -353,7 +351,6 @@ func TestHandleListProjects(t *testing.T) {
 			t.Fatalf("failed to decode response: %v", err)
 		}
 
-		// Ensure the API converted nil to empty slice []
 		if projects == nil {
 			t.Error("expected empty slice [], got nil")
 		}
@@ -578,6 +575,65 @@ func TestHandleRotateKey(t *testing.T) {
 		if resp.APIKey == "" {
 			t.Errorf("expected non-empty api key in response")
 		}
+	})
+}
+
+func TestHandleDeleteAccount(t *testing.T) {
+	t.Run("return unauthorized when user_id is missing", func(t *testing.T) {
+		api := &API{Store: &mockStore{}}
+
+		req := httptest.NewRequest(http.MethodPost, "/account/delete", nil)
+		recorder := httptest.NewRecorder()
+
+		api.HandleDeleteAccount(recorder, req)
+
+		assertStatusCode(t, recorder.Code, http.StatusUnauthorized)
+	})
+
+	t.Run("return internal error when DeleteUser fails", func(t *testing.T) {
+		store := &mockStore{Err: errors.New("db failure")}
+		errorChan := make(chan error, 1)
+
+		api := &API{
+			Store: store,
+			ErrorReporter: func(msg string, args ...any) {
+				if len(args) > 1 {
+					if err, ok := args[1].(error); ok {
+						errorChan <- err
+					}
+				}
+			},
+		}
+
+		req := httptest.NewRequest(http.MethodPost, "/account/delete", nil)
+		req = addUserIDContext(req)
+		recorder := httptest.NewRecorder()
+
+		api.HandleDeleteAccount(recorder, req)
+
+		assertStatusCode(t, recorder.Code, http.StatusInternalServerError)
+
+		select {
+		case err := <-errorChan:
+			if err.Error() != "db failure" {
+				t.Errorf("expected 'db failure', got %v", err)
+			}
+		case <-time.After(100 * time.Millisecond):
+			t.Fatal("Timed out waiting for error report")
+		}
+	})
+
+	t.Run("delete account successfully", func(t *testing.T) {
+		store := &mockStore{}
+		api := &API{Store: store}
+
+		req := httptest.NewRequest(http.MethodPost, "/account/delete", nil)
+		req = addUserIDContext(req)
+		recorder := httptest.NewRecorder()
+
+		api.HandleDeleteAccount(recorder, req)
+
+		assertStatusCode(t, recorder.Code, http.StatusOK)
 	})
 }
 

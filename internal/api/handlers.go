@@ -21,6 +21,7 @@ type Store interface {
 	UpdateProjectName(ctx context.Context, userID string, projectID string, newName string) error
 	RotateAPIKey(ctx context.Context, userID string, projectID string) (string, error)
 	DeleteProject(ctx context.Context, userID string, projectID string) error
+	DeleteUser(ctx context.Context, userID string) error
 }
 
 type API struct {
@@ -190,4 +191,20 @@ func (api *API) HandleRotateKey(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(protocol.RotateProjectAPIKeyResponse{APIKey: newKey})
+}
+
+func (api *API) HandleDeleteAccount(w http.ResponseWriter, r *http.Request) {
+	userID, ok := GetUserID(r.Context())
+	if !ok || userID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if err := api.Store.DeleteUser(r.Context(), userID); err != nil {
+		api.ErrorReporter("Failed to delete account", "error", err)
+		http.Error(w, "Failed to delete account", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

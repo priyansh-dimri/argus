@@ -102,6 +102,10 @@ func (m *mockStore) DeleteProject(ctx context.Context, userID string, projectID 
 	return m.Err
 }
 
+func (m *mockStore) DeleteUser(ctx context.Context, userID string) error {
+	return m.Err
+}
+
 type nilProjectStore struct {
 	*mockStore
 }
