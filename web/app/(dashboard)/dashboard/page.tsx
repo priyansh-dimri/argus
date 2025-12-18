@@ -6,6 +6,7 @@ import { StatsCards } from "@/components/dashboard/stats-cards";
 import { ThreatTable } from "@/components/dashboard/threat-table";
 import { ThreatChart } from "@/components/dashboard/threat-chart";
 import { CreateProjectDialog } from "@/components/dashboard/create-project-dialog";
+import { DeleteAccountDialog } from "@/components/settings/delete-account-dialog";
 import { Loader2, LayoutGrid } from "lucide-react";
 import { LiveFeed } from "@/components/dashboard/live-feed";
 import {
@@ -16,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 export default function DashboardPage() {
   const {
@@ -50,16 +52,30 @@ export default function DashboardPage() {
             monitoring threats.
           </p>
         </div>
-        <CreateProjectDialog
-          onCreate={async (name) => {
-            setIsCreatingFirstProject(true);
-            return createProject(name, true);
-          }}
-          onClose={() => {
-            setIsCreatingFirstProject(false);
-            refreshProjects();
-          }}
-        />
+
+        <div className="flex flex-col gap-4 items-center">
+          <CreateProjectDialog
+            onCreate={async (name) => {
+              setIsCreatingFirstProject(true);
+              return createProject(name, true);
+            }}
+            onClose={() => {
+              setIsCreatingFirstProject(false);
+              refreshProjects();
+            }}
+          />
+
+          <DeleteAccountDialog
+            trigger={
+              <Button
+                variant="link"
+                className="text-xs text-muted-foreground hover:text-red-400"
+              >
+                Delete my account
+              </Button>
+            }
+          />
+        </div>
       </div>
     );
   }
@@ -97,7 +113,7 @@ export default function DashboardPage() {
 
       <StatsCards threats={threats} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-7 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-7 gap-6">
         <div className="lg:col-span-4">
           <ThreatChart threats={threats} />
         </div>
