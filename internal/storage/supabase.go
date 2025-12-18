@@ -141,6 +141,47 @@ func (s *SupabaseStore) GetProjectsByUser(ctx context.Context, userID string) ([
 	return projects, nil
 }
 
+func (s *SupabaseStore) UpdateProjectName(ctx context.Context, projectID string, newName string) error {
+	const query = `UPDATE projects SET name = $1 WHERE id = $2`
+	tag, err := s.db.Exec(ctx, query, newName, projectID)
+	if err != nil {
+		return fmt.Errorf("failed to update project name: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("project not found")
+	}
+	return nil
+}
+
+func (s *SupabaseStore) RotateAPIKey(ctx context.Context, projectID string) (string, error) {
+	newKey, err := s.generateAPIKey()
+	if err != nil {
+		return "", fmt.Errorf("failed to generate new key: %w", err)
+	}
+
+	const query = `UPDATE projects SET api_key = $1 WHERE id = $2`
+	tag, err := s.db.Exec(ctx, query, newKey, projectID)
+	if err != nil {
+		return "", fmt.Errorf("failed to update api key: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return "", fmt.Errorf("project not found")
+	}
+	return newKey, nil
+}
+
+func (s *SupabaseStore) DeleteProject(ctx context.Context, projectID string) error {
+	const query = `DELETE FROM projects WHERE id = $1`
+	tag, err := s.db.Exec(ctx, query, projectID)
+	if err != nil {
+		return fmt.Errorf("failed to delete project: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("project not found")
+	}
+	return nil
+}
+
 func (s *SupabaseStore) generateAPIKey() (string, error) {
 	bytes := make([]byte, 16)
 	if _, err := s.randRead(bytes); err != nil {

@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"strings"
@@ -310,6 +311,227 @@ func TestSupabaseStore_ProjectManagement(t *testing.T) {
 		}
 		if !strings.Contains(err.Error(), "failed to scan project row") {
 			t.Errorf("expected 'failed to scan project row' wrapper, got %v", err)
+		}
+	})
+
+	t.Run("update project name successfully", func(t *testing.T) {
+		projectID := "project_123"
+		newName := "Renamed Project"
+
+		mock.ExpectExec("UPDATE projects SET name").
+			WithArgs(newName, projectID).
+			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+
+		err := store.UpdateProjectName(ctx, projectID, newName)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("expectation not met: %s", err)
+		}
+	})
+
+	t.Run("detect database error on update project name", func(t *testing.T) {
+		projectID := "project_123"
+		newName := "Renamed Project"
+
+		mock.ExpectExec("UPDATE projects SET name").
+			WithArgs(newName, projectID).
+			WillReturnError(errors.New("db update failed"))
+
+		err := store.UpdateProjectName(ctx, projectID, newName)
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if !strings.Contains(err.Error(), "failed to update project name") {
+			t.Errorf("expected 'failed to update project name' wrapper, got %v", err)
+		}
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("expectation not met: %s", err)
+		}
+	})
+
+	t.Run("detect not found on update project name", func(t *testing.T) {
+		projectID := "proj_missing"
+		newName := "Renamed Project"
+
+		mock.ExpectExec("UPDATE projects SET name").
+			WithArgs(newName, projectID).
+			WillReturnResult(pgxmock.NewResult("UPDATE", 0))
+
+		err := store.UpdateProjectName(ctx, projectID, newName)
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if err.Error() != "project not found" {
+			t.Errorf("expected 'project not found', got %v", err)
+		}
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("expectation not met: %s", err)
+		}
+	})
+
+	t.Run("rotate api key successfully", func(t *testing.T) {
+		projectID := "project_123"
+
+		fixed := []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f}
+		expectedKey := "argus_" + hex.EncodeToString(fixed)
+
+		store := NewSupabaseStore(mock)
+		store.randRead = func(b []byte) (n int, err error) {
+			copy(b, fixed)
+			return len(b), nil
+		}
+
+		mock.ExpectExec("UPDATE projects SET api_key").
+			WithArgs(expectedKey, projectID).
+			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+
+		newKey, err := store.RotateAPIKey(ctx, projectID)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+		if newKey != expectedKey {
+			t.Errorf("expected new key %s, got %s", expectedKey, newKey)
+		}
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("expectation not met: %s", err)
+		}
+	})
+
+	t.Run("detect api key generation failure on rotate api key", func(t *testing.T) {
+		projectID := "project_123"
+
+		store := NewSupabaseStore(mock)
+		store.randRead = func(b []byte) (n int, err error) {
+			return 0, errors.New("entropy error")
+		}
+
+		_, err := store.RotateAPIKey(ctx, projectID)
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if !strings.Contains(err.Error(), "failed to generate new key") {
+			t.Errorf("expected 'failed to generate new key' wrapper, got %v", err)
+		}
+	})
+
+	t.Run("detect database error on rotate api key", func(t *testing.T) {
+		projectID := "project_123"
+
+		fixed := []byte{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99}
+		expectedKey := "argus_" + hex.EncodeToString(fixed)
+
+		store := NewSupabaseStore(mock)
+		store.randRead = func(b []byte) (n int, err error) {
+			copy(b, fixed)
+			return len(b), nil
+		}
+
+		mock.ExpectExec("UPDATE projects SET api_key").
+			WithArgs(expectedKey, projectID).
+			WillReturnError(errors.New("db update failed"))
+
+		_, err := store.RotateAPIKey(ctx, projectID)
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if !strings.Contains(err.Error(), "failed to update api key") {
+			t.Errorf("expected 'failed to update api key' wrapper, got %v", err)
+		}
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("expectation not met: %s", err)
+		}
+	})
+
+	t.Run("detect not found on rotate api key", func(t *testing.T) {
+		projectID := "proj_missing"
+
+		fixed := []byte{0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f}
+		expectedKey := "argus_" + hex.EncodeToString(fixed)
+
+		store := NewSupabaseStore(mock)
+		store.randRead = func(b []byte) (n int, err error) {
+			copy(b, fixed)
+			return len(b), nil
+		}
+
+		mock.ExpectExec("UPDATE projects SET api_key").
+			WithArgs(expectedKey, projectID).
+			WillReturnResult(pgxmock.NewResult("UPDATE", 0))
+
+		_, err := store.RotateAPIKey(ctx, projectID)
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if err.Error() != "project not found" {
+			t.Errorf("expected 'project not found', got %v", err)
+		}
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("expectation not met: %s", err)
+		}
+	})
+
+	t.Run("delete project successfully", func(t *testing.T) {
+		projectID := "project_123"
+
+		mock.ExpectExec("DELETE FROM projects").
+			WithArgs(projectID).
+			WillReturnResult(pgxmock.NewResult("DELETE", 1))
+
+		err := store.DeleteProject(ctx, projectID)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("expectation not met: %s", err)
+		}
+	})
+
+	t.Run("detect database error on delete project", func(t *testing.T) {
+		projectID := "project_123"
+
+		mock.ExpectExec("DELETE FROM projects").
+			WithArgs(projectID).
+			WillReturnError(errors.New("db delete failed"))
+
+		err := store.DeleteProject(ctx, projectID)
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if !strings.Contains(err.Error(), "failed to delete project") {
+			t.Errorf("expected 'failed to delete project', got %v", err)
+		}
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("expectation not met: %s", err)
+		}
+	})
+
+	t.Run("detect not found on delete project", func(t *testing.T) {
+		projectID := "proj_missing"
+
+		mock.ExpectExec("DELETE FROM projects").
+			WithArgs(projectID).
+			WillReturnResult(pgxmock.NewResult("DELETE", 0))
+
+		err := store.DeleteProject(ctx, projectID)
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if err.Error() != "project not found" {
+			t.Errorf("expected 'project not found', got %v", err)
+		}
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("expectation are not met: %s", err)
 		}
 	})
 }
