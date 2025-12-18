@@ -7,6 +7,7 @@ import { ThreatTable } from "@/components/dashboard/threat-table";
 import { ThreatChart } from "@/components/dashboard/threat-chart";
 import { CreateProjectDialog } from "@/components/dashboard/create-project-dialog";
 import { Loader2, LayoutGrid } from "lucide-react";
+import { LiveFeed } from "@/components/dashboard/live-feed";
 import {
   Select,
   SelectContent,
@@ -96,44 +97,16 @@ export default function DashboardPage() {
 
       <StatsCards threats={threats} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-7 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-7 gap-6 items-start">
         <div className="lg:col-span-4">
           <ThreatChart threats={threats} />
         </div>
         <div className="lg:col-span-3">
-          <div className="h-full min-h-[300px] rounded-xl border border-white/10 bg-black/40 backdrop-blur-md p-6 flex flex-col items-center justify-center text-center">
-            <span className="text-neon-blue font-mono text-sm mb-2">
-              ● LIVE FEED
-            </span>
-            {threats.length === 0 ? (
-              <p className="text-muted-foreground text-sm">
-                Waiting for incoming traffic for{" "}
-                <strong>{selectedProject?.name}</strong>...
-              </p>
-            ) : (
-              <div className="text-left w-full space-y-2">
-                {threats.slice(0, 5).map((t) => (
-                  <div
-                    key={t.id}
-                    className="text-xs font-mono text-gray-400 border-b border-white/5 pb-2"
-                  >
-                    <span
-                      className={
-                        t.is_threat ? "text-red-500" : "text-green-500"
-                      }
-                    >
-                      {t.is_threat ? "BLOCK" : "ALLOW"}
-                    </span>{" "}
-                    {t.ip} - {t.route}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <LiveFeed threats={threats} isConnected={true} />
         </div>
       </div>
 
-      <ThreatTable threats={threats} />
+      <ThreatTable projectId={selectedProject?.id} />
     </div>
   );
 }

@@ -16,6 +16,7 @@ export interface ThreatLog {
   project_id: string;
   headers: Record<string, string>;
   metadata: Record<string, string>;
+  payload: string;
 }
 
 export function useThreats(projectId: string | undefined, limit = 50) {
