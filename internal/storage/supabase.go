@@ -182,6 +182,18 @@ func (s *SupabaseStore) DeleteProject(ctx context.Context, userID string, projec
 	return nil
 }
 
+func (s *SupabaseStore) DeleteUser(ctx context.Context, userID string) error {
+	const query = `DELETE FROM auth.users WHERE id = $1`
+	tag, err := s.db.Exec(ctx, query, userID)
+	if err != nil {
+		return fmt.Errorf("failed to delete user: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("user not found")
+	}
+	return nil
+}
+
 func (s *SupabaseStore) generateAPIKey() (string, error) {
 	bytes := make([]byte, 16)
 	if _, err := s.randRead(bytes); err != nil {

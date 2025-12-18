@@ -544,4 +544,62 @@ func TestSupabaseStore_ProjectManagement(t *testing.T) {
 			t.Errorf("expectation are not met: %s", err)
 		}
 	})
+
+	t.Run("delete user successfully", func(t *testing.T) {
+		userID := "user_123"
+
+		mock.ExpectExec("DELETE FROM auth.users").
+			WithArgs(userID).
+			WillReturnResult(pgxmock.NewResult("DELETE", 1))
+
+		err := store.DeleteUser(ctx, userID)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("expectation not met: %s", err)
+		}
+	})
+
+	t.Run("detect database error on delete user", func(t *testing.T) {
+		userID := "user_123"
+
+		mock.ExpectExec("DELETE FROM auth.users").
+			WithArgs(userID).
+			WillReturnError(errors.New("db delete failed"))
+
+		err := store.DeleteUser(ctx, userID)
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if !strings.Contains(err.Error(), "failed to delete user") {
+			t.Errorf("expected 'failed to delete user' wrapper, got %v", err)
+		}
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("expectation not met: %s", err)
+		}
+	})
+
+	t.Run("detect not found on delete user", func(t *testing.T) {
+		userID := "user_missing"
+
+		mock.ExpectExec("DELETE FROM auth.users").
+			WithArgs(userID).
+			WillReturnResult(pgxmock.NewResult("DELETE", 0))
+
+		err := store.DeleteUser(ctx, userID)
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if err.Error() != "user not found" {
+			t.Errorf("expected 'user not found', got %v", err)
+		}
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("expectation not met: %s", err)
+		}
+	})
+
 }

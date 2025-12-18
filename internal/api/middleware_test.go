@@ -215,7 +215,7 @@ func TestCORS(t *testing.T) {
 		if rec.Header().Get("Access-Control-Allow-Origin") != "http://localhost:3000" {
 			t.Errorf("Missing/wrong Access-Control-Allow-Origin: %q", rec.Header().Get("Access-Control-Allow-Origin"))
 		}
-		if rec.Header().Get("Access-Control-Allow-Methods") != "GET, POST, OPTIONS" {
+		if rec.Header().Get("Access-Control-Allow-Methods") != "GET, POST, OPTIONS, DELETE, PATCH" {
 			t.Errorf("Missing/wrong Access-Control-Allow-Methods: %q", rec.Header().Get("Access-Control-Allow-Methods"))
 		}
 		if rec.Header().Get("Access-Control-Allow-Headers") != "Authorization, Content-Type" {
