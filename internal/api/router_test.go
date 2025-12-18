@@ -156,6 +156,20 @@ func TestRouter(t *testing.T) {
 			authHeader:     "Bearer " + validJWT,
 			expectedStatus: http.StatusMethodNotAllowed,
 		},
+		{
+			name:           "Valid + Authenticated DELETE /account",
+			method:         http.MethodDelete,
+			path:           "/account",
+			authHeader:     "Bearer " + validJWT,
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Valid + Unauthenticated DELETE /account",
+			method:         http.MethodDelete,
+			path:           "/account",
+			authHeader:     "",
+			expectedStatus: http.StatusUnauthorized,
+		},
 	}
 
 	for _, tc := range tests {

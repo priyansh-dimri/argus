@@ -11,6 +11,7 @@ func NewRouter(api *API, mw *Middleware) *http.ServeMux {
 	mux.HandleFunc("PATCH /projects", mw.AuthDashboard(api.HandleUpdateProject))
 	mux.HandleFunc("DELETE /projects", mw.AuthDashboard(api.HandleDeleteProject))
 	mux.HandleFunc("POST /rotate-key", mw.AuthDashboard(api.HandleRotateKey))
+	mux.HandleFunc("DELETE /account", mw.AuthDashboard(api.HandleDeleteAccount))
 
 	return mux
 }
