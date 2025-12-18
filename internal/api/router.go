@@ -8,6 +8,9 @@ func NewRouter(api *API, mw *Middleware) *http.ServeMux {
 	mux.HandleFunc("POST /analyze", mw.AuthSDK(api.HandleAnalyze))
 	mux.HandleFunc("POST /projects", mw.AuthDashboard(api.HandleCreateProject))
 	mux.HandleFunc("GET /projects", mw.AuthDashboard(api.HandleListProjects))
+	mux.HandleFunc("PATCH /projects", mw.AuthDashboard(api.HandleUpdateProject))
+	mux.HandleFunc("DELETE /projects", mw.AuthDashboard(api.HandleDeleteProject))
+	mux.HandleFunc("POST /rotate-key", mw.AuthDashboard(api.HandleRotateKey))
 
 	return mux
 }

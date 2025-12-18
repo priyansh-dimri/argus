@@ -17,8 +17,8 @@ func TestRouter(t *testing.T) {
 		MockProjectID: "project_123",
 	}
 	apiHandler := NewAPI(mock, store)
-
 	testSecret := "test-secret"
+
 	mw := &Middleware{
 		Store:     store,
 		JWTSecret: testSecret,
@@ -93,21 +93,87 @@ func TestRouter(t *testing.T) {
 			authHeader:     "",
 			expectedStatus: http.StatusUnauthorized,
 		},
+		{
+			name:           "Valid + Authenticated PATCH /projects",
+			method:         http.MethodPatch,
+			path:           "/projects",
+			authHeader:     "Bearer " + validJWT,
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Valid + Unauthenticated PATCH /projects",
+			method:         http.MethodPatch,
+			path:           "/projects",
+			authHeader:     "",
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "Invalid Method PUT /projects (for update route)",
+			method:         http.MethodPut,
+			path:           "/projects",
+			authHeader:     "Bearer " + validJWT,
+			expectedStatus: http.StatusMethodNotAllowed,
+		},
+		{
+			name:           "Valid + Authenticated DELETE /projects",
+			method:         http.MethodDelete,
+			path:           "/projects",
+			authHeader:     "Bearer " + validJWT,
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Valid + Unauthenticated DELETE /projects",
+			method:         http.MethodDelete,
+			path:           "/projects",
+			authHeader:     "",
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "Invalid Method PATCH /projects as delete (wrong method)",
+			method:         http.MethodPatch,
+			path:           "/projects",
+			authHeader:     "Bearer " + validJWT,
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Valid + Authenticated POST /rotate-key",
+			method:         http.MethodPost,
+			path:           "/rotate-key",
+			authHeader:     "Bearer " + validJWT,
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Valid + Unauthenticated POST /rotate-key",
+			method:         http.MethodPost,
+			path:           "/rotate-key",
+			authHeader:     "",
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "Invalid Method GET /rotate-key",
+			method:         http.MethodGet,
+			path:           "/rotate-key",
+			authHeader:     "Bearer " + validJWT,
+			expectedStatus: http.StatusMethodNotAllowed,
+		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			var body *strings.Reader
-			if tc.method == http.MethodPost {
-				switch tc.path {
-				case "/analyze":
-					body = strings.NewReader(`{"log": "test"}`)
-				case "/projects":
-					body = strings.NewReader(`{"name": "test project"}`)
-				default:
-					body = strings.NewReader("")
-				}
-			} else {
+
+			switch {
+			case tc.method == http.MethodPost && tc.path == "/analyze":
+				body = strings.NewReader(`{"log": "test"}`)
+			case tc.method == http.MethodPost && tc.path == "/projects":
+				body = strings.NewReader(`{"name": "test project"}`)
+			case tc.method == http.MethodPatch && tc.path == "/projects":
+				body = strings.NewReader(`{"id": "proj_1", "name": "updated"}`)
+			case tc.method == http.MethodDelete && tc.path == "/projects":
+				body = strings.NewReader(`{"id": "proj_1"}`)
+			case tc.method == http.MethodPost && tc.path == "/rotate-key":
+				body = strings.NewReader(`{"id": "proj_1"}`)
+			default:
 				body = strings.NewReader("")
 			}
 			req := httptest.NewRequest(tc.method, tc.path, body)
