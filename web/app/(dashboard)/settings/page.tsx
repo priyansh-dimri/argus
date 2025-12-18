@@ -3,7 +3,7 @@
 import { useProjects } from "@/hooks/use-projects";
 import { ProjectConfig } from "@/components/settings/project-config";
 import { DangerZone } from "@/components/settings/danger-zone";
-import { Loader2 } from "lucide-react";
+import { Loader2, LayoutGrid } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -35,9 +35,17 @@ export default function SettingsPage() {
 
   if (projects.length === 0) {
     return (
-      <div className="flex flex-col h-[50vh] items-center justify-center text-center space-y-4">
-        <p className="text-muted-foreground">You have no projects.</p>
-        <CreateProjectDialog onCreate={createProject} />
+      <div className="flex flex-col h-[70vh] items-center justify-center text-center space-y-6">
+        <div className="h-20 w-20 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
+          <LayoutGrid className="h-10 w-10 text-muted-foreground" />
+        </div>
+        <div className="max-w-md space-y-2">
+          <h2 className="text-2xl font-bold text-white">No Projects Found</h2>
+          <p className="text-muted-foreground">
+            Create your first project to configure settings.
+          </p>
+        </div>
+        <CreateProjectDialog onCreate={(name) => createProject(name, false)} />
       </div>
     );
   }
@@ -85,7 +93,9 @@ export default function SettingsPage() {
             </SelectContent>
           </Select>
 
-          <CreateProjectDialog onCreate={createProject} />
+          <CreateProjectDialog
+            onCreate={(name) => createProject(name, false)}
+          />
         </div>
       </div>
 
