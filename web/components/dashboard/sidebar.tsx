@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 import {
   ShieldCheck,
   LayoutDashboard,
-  Activity,
   Settings,
   LogOut,
   ChevronLeft,
@@ -33,8 +32,7 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
   };
 
   const navItems = [
-    { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Live Threats", href: "/dashboard/threats", icon: Activity },
+    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Settings", href: "/settings", icon: Settings },
   ];
 
