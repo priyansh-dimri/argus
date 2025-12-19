@@ -9,16 +9,18 @@ import (
 )
 
 type Middleware struct {
-	Client AnalysisSender
-	WAF    RuleEngine
-	Config Config
+	Client  AnalysisSender
+	WAF     RuleEngine
+	Breaker *Breaker
+	Config  Config
 }
 
 func NewMiddleware(client AnalysisSender, waf RuleEngine, config Config) *Middleware {
 	return &Middleware{
-		Client: client,
-		WAF:    waf,
-		Config: config,
+		Client:  client,
+		WAF:     waf,
+		Breaker: NewBreaker("argus-api-breaker"),
+		Config:  config,
 	}
 }
 
@@ -72,7 +74,9 @@ func (m *Middleware) handleSmartShield(w http.ResponseWriter, r *http.Request, n
 
 	resp, err := m.sendSyncAnalysis(r, body, wafBlocked)
 
-	if err == nil && !*resp.IsThreat {
+	isThreat := resp.IsThreat != nil && *resp.IsThreat
+
+	if err != nil || !isThreat {
 		next.ServeHTTP(w, r)
 		return
 	}
@@ -82,7 +86,10 @@ func (m *Middleware) handleSmartShield(w http.ResponseWriter, r *http.Request, n
 
 func (m *Middleware) handleParanoid(w http.ResponseWriter, r *http.Request, next http.Handler, wafBlocked bool, body []byte) {
 	resp, err := m.sendSyncAnalysis(r, body, wafBlocked)
-	if err == nil && *resp.IsThreat {
+
+	isThreat := resp.IsThreat != nil && *resp.IsThreat
+
+	if err == nil && isThreat {
 		http.Error(w, "Blocked by Argus Paranoid Shield", http.StatusForbidden)
 		return
 	}
@@ -117,10 +124,21 @@ func (m *Middleware) buildPayload(r *http.Request, body []byte, wafBlocked bool)
 
 func (m *Middleware) sendAsyncLog(r *http.Request, body []byte, wafBlocked bool) {
 	req := m.buildPayload(r, body, wafBlocked)
-	_, _ = m.Client.SendAnalysis(req)
+	m.Breaker.Execute(func() (any, error) {
+		return m.Client.SendAnalysis(req)
+	})
 }
 
 func (m *Middleware) sendSyncAnalysis(r *http.Request, body []byte, wafBlocked bool) (protocol.AnalysisResponse, error) {
 	req := m.buildPayload(r, body, wafBlocked)
-	return m.Client.SendAnalysis(req)
+
+	result, err := m.Breaker.Execute(func() (any, error) {
+		return m.Client.SendAnalysis(req)
+	})
+
+	if err != nil {
+		return protocol.AnalysisResponse{}, err
+	}
+
+	return result.(protocol.AnalysisResponse), nil
 }

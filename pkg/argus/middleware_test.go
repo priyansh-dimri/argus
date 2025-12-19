@@ -1,6 +1,7 @@
 package argus
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -272,4 +273,29 @@ func TestHeaderParsingInMiddleware(t *testing.T) {
 	case <-time.After(50 * time.Millisecond):
 		t.Fatal("Timeout waiting for async log")
 	}
+}
+
+func TestSyncAnalysisError(t *testing.T) {
+	t.Run("WAF Threat + AI Error -> Pass (Fail Open)", func(t *testing.T) {
+		waf := &MockWAF{BlockRequest: true}
+		sender := &MockSender{
+			Err: errors.New("circuit breaker open"),
+		}
+		config := Config{Mode: SmartShield}
+		mw := NewMiddleware(sender, waf, config)
+
+		handlerCalled := false
+		handler := mw.Protect(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			handlerCalled = true
+		}))
+
+		req := httptest.NewRequest("POST", "/api", nil)
+		rec := httptest.NewRecorder()
+
+		handler.ServeHTTP(rec, req)
+
+		if !handlerCalled {
+			t.Error("SmartShield: AI Error should trigger Fail Open (allow request)")
+		}
+	})
 }
