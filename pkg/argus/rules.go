@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/fs"
 	"net/http"
+	"sync"
 
 	"github.com/corazawaf/coraza/v3"
 )
@@ -21,38 +22,51 @@ type WAFWrapper struct {
 
 var _ RuleEngine = (*WAFWrapper)(nil)
 
+var (
+	instance *WAFWrapper
+	once     sync.Once
+	initErr  error
+)
+
 //go:embed rules/*.conf rules/*.data
 var rulesFS embed.FS
 
 func NewWAF() (*WAFWrapper, error) {
-	cfg := coraza.NewWAFConfig()
+	once.Do(func() {
+		cfg := coraza.NewWAFConfig()
 
-	root, _ := fs.Sub(rulesFS, "rules")
-	cfg = cfg.WithRootFS(root)
+		root, _ := fs.Sub(rulesFS, "rules")
+		cfg = cfg.WithRootFS(root)
 
-	files := []string{
-		"coraza.conf",
-		"crs-setup.conf",
-		"REQUEST-901-INITIALIZATION.conf",
-		"REQUEST-941-APPLICATION-ATTACK-XSS.conf",
-		"REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
-		"REQUEST-949-BLOCKING-EVALUATION.conf",
-	}
-
-	var err error
-	for _, file := range files {
-		cfg, err = parseRuleFile(cfg, file)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse rule file %s: %w", file, err)
+		files := []string{
+			"coraza.conf",
+			"crs-setup.conf",
+			"REQUEST-901-INITIALIZATION.conf",
+			"REQUEST-941-APPLICATION-ATTACK-XSS.conf",
+			"REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+			"REQUEST-949-BLOCKING-EVALUATION.conf",
 		}
-	}
 
-	waf, err := coraza.NewWAF(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize coraza waf: %w", err)
-	}
+		var err error
 
-	return &WAFWrapper{waf: waf}, nil
+		for _, file := range files {
+			cfg, err = parseRuleFile(cfg, file)
+			if err != nil {
+				initErr = fmt.Errorf("failed to parse rule file %s: %w", file, err)
+				return
+			}
+		}
+
+		waf, err := coraza.NewWAF(cfg)
+		if err != nil {
+			initErr = fmt.Errorf("failed to initialize coraza waf: %w", err)
+			return
+		}
+
+		instance = &WAFWrapper{waf: waf}
+
+	})
+	return instance, initErr
 }
 
 func parseRuleFile(cfg coraza.WAFConfig, filename string) (coraza.WAFConfig, error) {
