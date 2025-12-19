@@ -29,12 +29,12 @@ export function Navbar() {
   return (
     <header className="fixed top-4 w-full z-50 px-4 md:px-0">
       <div className="mx-auto max-w-5xl">
-        <nav className="glass rounded-full px-6 h-14 flex items-center justify-between transition-all duration-300">
+        <nav className="glass rounded-full px-6 h-14 flex items-center justify-between transition-all duration-300 relative">
           <Link href="/" className="flex items-center gap-2 group">
             <ArgusLogo />
           </Link>
 
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
             {navItems.map((item) => (
               <Link
                 key={item.name}
