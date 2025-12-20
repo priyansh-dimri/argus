@@ -26,7 +26,7 @@ var _ AnalysisSender = (*Client)(nil) // compile time check
 func NewClient(baseURL, apiKey string, timeout time.Duration) *Client {
 	return &Client{
 		baseURL: baseURL,
-		apiKey: apiKey,
+		apiKey:  apiKey,
 		marshal: json.Marshal,
 		httpClient: &http.Client{
 			Timeout: timeout,
@@ -46,6 +46,7 @@ func (c *Client) SendAnalysis(req protocol.AnalysisRequest) (protocol.AnalysisRe
 		return protocol.AnalysisResponse{}, fmt.Errorf("failed to create http request: %w", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Authorization", "Bearer "+c.apiKey)
 
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {

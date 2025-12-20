@@ -63,7 +63,7 @@ jobs:
       - name: Update coverage badge
         run: |
           make test/ci-cover
-          grep -v -E '(gemini.go|main.go|rules.go)' coverage.raw.out > coverage.out
+          grep -v -E '(gemini.go|main.go|rules.go|sidecar.go)' coverage.raw.out > coverage.out
           COVERAGE=$(go tool cover -func=coverage.out | tail -n 1 | awk '{print $3}' | sed 's/%//; s/\.0$//')
           COLOR="lightgrey"
           [ "$COVERAGE" -ge 90 ] && COLOR="brightgreen" || [ "$COVERAGE" -ge 70 ] && COLOR="yellow"

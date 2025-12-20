@@ -9,7 +9,5 @@ const (
 )
 
 type Config struct {
-	AppID  string
-	APIKey string
 	Mode   SecurityMode
 }
