@@ -11,10 +11,9 @@ import (
 var benchmarkAnalyzerResult protocol.AnalysisResponse
 
 type mockBenchmarkAIClient struct {
-	response        string
-	tokenCount      int
-	maxTokens       int
-	simulateLatency bool
+	response   string
+	tokenCount int
+	maxTokens  int
 }
 
 func (m *mockBenchmarkAIClient) Generate(ctx context.Context, prompt string) (string, error) {

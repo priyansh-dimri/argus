@@ -9,5 +9,5 @@ const (
 )
 
 type Config struct {
-	Mode   SecurityMode
+	Mode SecurityMode
 }
