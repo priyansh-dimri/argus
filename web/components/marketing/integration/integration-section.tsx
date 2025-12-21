@@ -8,60 +8,49 @@ import { Terminal, Box } from "lucide-react";
 const GO_CODE = `package main
 
 import (
+    "log"
     "net/http"
     "time"
-    "github.com/priyansh-dimri/argus"
+    
+    "github.com/priyansh-dimri/argus/pkg/argus"
 )
 
 func main() {
-    // Initialize WAF and client
-    waf := argus.NewDefaultWAF()
+    // Initialize WAF
+    waf, _ := argus.NewWAF()
+    
+    // Initialize Argus client
     client := argus.NewClient(
-        "https://api.argus.io",
-        "your-api-key",
-        5*time.Second,
+        "https://api.example.com", // add backend URL
+        "api-key",
+        20*time.Second,
     )
     
     // Configure security mode
     config := argus.Config{
-        AppID:  "your-app-id",
-        APIKey: "your-api-key",
-        Mode:   argus.SmartShield,
+        Mode: argus.SmartShield,
     }
     
     // Create and apply middleware
     shield := argus.NewMiddleware(client, waf, config)
     
-    http.Handle("/api", shield.Protect(yourHandler))
+    http.Handle("/api/", shield.Protect(yourHandler))
+    http.ListenAndServe(":8080", nil)
 }`;
 
-const SIDECAR_CODE = `# !!TO BE UPDATED!!
-# Run Argus as a sidecar for Node/Python/Ruby apps
-$ docker run -d \\
-  -p 8080:8080 \\
-  -e TARGET_URL=http://localhost:3000 \\
-  -e ARGUS_MODE=SMART_SHIELD \\
-  ghcr.io/priyansh-dimri/argus:latest
+const SIDECAR_CODE = `
+docker run -d \\
+  --name argus-sidecar \\
+  -p 8000:8000 \\
+  -e TARGET_URL=http://host.docker.internal:3000 \\
+  -e ARGUS_API_KEY=your-api-key \\
+  -e ARGUS_API_URL=https://api.argus-security.com \\
+  ghcr.io/priyansh-dimri/argus-sidecar:latest
 
-# Traffic flow: User -> Argus (8080) -> Your App (3000)`;
-
-const CONFIG_CODE = `
-!!TO BE UPDATED!!
-{
-  "app_id": "app_xy7_229",
-  "mode": "SMART_SHIELD",
-  "resilience": {
-    "circuit_breaker": {
-      "timeout_ms": 300,
-      "fail_open": true
-    }
-  },
-  "rules": {
-    "block_sqli": true,
-    "block_xss": true,
-    "ai_verification": true
-  }
-}`;
+# Route traffic through protection modes:
+# Smart Shield:   http://localhost:8000/smart-shield/<route>
+# Latency First:  http://localhost:8000/latency-first/<route>
+# Paranoid:       http://localhost:8000/paranoid/<route>`;
 
 export function IntegrationSection() {
   return (
@@ -115,7 +104,7 @@ export function IntegrationSection() {
             viewport={{ once: true }}
           >
             <Tabs defaultValue="go" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 bg-white/5 border border-white/10">
+              <TabsList className="grid w-full grid-cols-2 bg-white/5 border border-white/10">
                 <TabsTrigger
                   value="go"
                   className="data-[state=active]:bg-white/10"
@@ -128,12 +117,6 @@ export function IntegrationSection() {
                 >
                   Sidecar
                 </TabsTrigger>
-                <TabsTrigger
-                  value="config"
-                  className="data-[state=active]:bg-white/10"
-                >
-                  Config
-                </TabsTrigger>
               </TabsList>
 
               <div className="mt-4 relative">
@@ -144,9 +127,6 @@ export function IntegrationSection() {
                 </TabsContent>
                 <TabsContent value="sidecar" className="relative">
                   <CodeBlock code={SIDECAR_CODE} language="bash" />
-                </TabsContent>
-                <TabsContent value="config" className="relative">
-                  <CodeBlock code={CONFIG_CODE} language="json" />
                 </TabsContent>
               </div>
             </Tabs>
