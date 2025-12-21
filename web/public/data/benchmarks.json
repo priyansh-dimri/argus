@@ -1,0 +1,29 @@
+{
+  "analyzer_pipeline": [
+    { "name": "Minimal", "value": 2.51 },
+    { "name": "Small Log", "value": 3.09 },
+    { "name": "JSON Marshal", "value": 5.74 },
+    { "name": "Complex Headers", "value": 9.12 }
+  ],
+
+  "middleware_modes": [
+    { "name": "Baseline", "value": 3.47 },
+    { "name": "LatencyFirst", "value": 5.43 },
+    { "name": "SmartShield", "value": 5.39 },
+    { "name": "Paranoid", "value": 4.55 }
+  ],
+
+  "scalability": [
+    { "cores": 1, "value": 309420 },
+    { "cores": 2, "value": 229196 },
+    { "cores": 4, "value": 137217 },
+    { "cores": 8, "value": 133325 }
+  ],
+
+  "memory_allocs": [
+    { "name": "Log Truncation", "bytes_per_op": 0, "allocs_per_op": 0 },
+    { "name": "Circuit Breaker", "bytes_per_op": 0, "allocs_per_op": 0 },
+    { "name": "Analyzer", "bytes_per_op": 1968, "allocs_per_op": 14 },
+    { "name": "WAF Check", "bytes_per_op": 6751, "allocs_per_op": 26 }
+  ]
+}
