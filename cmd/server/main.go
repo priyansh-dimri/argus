@@ -28,12 +28,19 @@ func main() {
 	}
 
 	ctx := context.Background()
+	config, err := pgxpool.ParseConfig(dbURL)
+	if err != nil {
+		logger.Error("Failed to parse DATABASE_URL", err)
+		os.Exit(1)
+	}
+	config.ConnConfig.RuntimeParams["statement_cache_mode"] = "describe"
 
-	dbPool, err := pgxpool.New(ctx, dbURL)
+	dbPool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
 		logger.Error("Failed to connect to database", err)
 		os.Exit(1)
 	}
+
 	defer dbPool.Close()
 	store := storage.NewSupabaseStore(dbPool)
 
