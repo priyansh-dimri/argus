@@ -1,0 +1,24 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+LICENSE
+*.md
+
+# Test files
+*_test.go
+coverage.out
+coverage.raw.out
+
+# Web
+web/
+node_modules/
+
+# Build artifacts
+bin/
+dist/
+
+# CI/CD
+.github/
