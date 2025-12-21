@@ -1,0 +1,14 @@
+services:
+  argus-sidecar:
+    image: ghcr.io/priyansh-dimri/argus-sidecar:latest
+    container_name: argus-sidecar
+    ports:
+      - "8000:8000"
+    environment:
+      # put your application url here
+      - TARGET_URL=http://localhost:3000   
+      - ARGUS_API_KEY=${ARGUS_API_KEY}
+      # Argus backend url(to be deployed soon)
+      - ARGUS_API_URL=http://localhost:8080
+    
+    restart: unless-stopped
