@@ -8,7 +8,7 @@ import { CircuitVisual } from "./features/circuit-visual";
 
 export function BentoGrid() {
   return (
-    <section className="py-32 relative overflow-hidden" id="architecture">
+    <section className="py-32 relative overflow-hidden" id="features">
       <div className="container mx-auto px-4 max-w-6xl">
         <div className="mb-16 text-center">
           <motion.h2
@@ -35,8 +35,8 @@ export function BentoGrid() {
           </BentoCard>
 
           <BentoCard
-            title="Microsecond Blocking"
-            description="Deterministic regex engine handles 99% of threats in <10µs."
+            title="Sub-Millisecond Protection"
+            description="WAF threat detection completes in 133µs with parallel processing; 75x faster than typical database queries."
             className="md:col-span-1 md:row-span-2"
             delay={0.2}
           >
