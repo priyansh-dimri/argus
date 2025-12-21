@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/priyansh-dimri/argus/pkg/protocol"
 )
@@ -51,7 +52,10 @@ func (api *API) HandleAnalyze(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := api.Analyzer.Analyze(r.Context(), req)
+	aiCtx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	res, err := api.Analyzer.Analyze(aiCtx, req)
 	if err != nil {
 		http.Error(w, "analysis error", http.StatusInternalServerError)
 		return
