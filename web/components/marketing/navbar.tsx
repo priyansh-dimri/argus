@@ -18,7 +18,7 @@ import { ArgusLogo } from "../shared/argus-logo";
 
 const navItems = [
   { name: "Docs", href: "/docs" },
-  { name: "Architecture", href: "#architecture" },
+  { name: "Architecture", href: "/architecture" },
   { name: "Benchmarks", href: "/benchmarks" },
 ];
 
