@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/priyansh-dimri/argus/internal/analyzer"
 	"github.com/priyansh-dimri/argus/internal/api"
@@ -33,7 +34,7 @@ func main() {
 		logger.Error("Failed to parse DATABASE_URL", err)
 		os.Exit(1)
 	}
-	config.ConnConfig.RuntimeParams["statement_cache_mode"] = "describe"
+	config.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
 
 	dbPool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
