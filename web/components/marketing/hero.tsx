@@ -78,7 +78,7 @@ export function Hero() {
               Start Protecting <Zap className="ml-2 h-4 w-4" />
             </Button>
           </Link>
-          <Link href="#architecture">
+          <Link href="/architecture">
             <Button
               variant="outline"
               size="lg"

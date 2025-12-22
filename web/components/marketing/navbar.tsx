@@ -113,7 +113,7 @@ export function Navbar() {
                     </Link>
                     <Link href="/signup" onClick={() => setIsOpen(false)}>
                       <Button className="w-full bg-white text-black hover:bg-white/90">
-                        Deploy Proxy
+                        Sign Up
                       </Button>
                     </Link>
                   </div>
