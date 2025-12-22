@@ -19,6 +19,7 @@ RUN apk --no-cache add ca-certificates tzdata
 WORKDIR /app
 
 COPY --from=builder /sidecar .
+COPY ascii.txt .
 
 ENV SIDECAR_PORT=8000
 EXPOSE 8000

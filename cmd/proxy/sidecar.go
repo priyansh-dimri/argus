@@ -23,6 +23,16 @@ func main() {
 		log.Fatal("ARGUS_API_KEY is required")
 	}
 
+	ascii, err := os.ReadFile("ascii.txt")
+	if err == nil {
+		fmt.Println(string(ascii))
+		fmt.Println()
+	}
+
+	fmt.Printf("🛡️ Argus Sidecar v1.0 | Port: %s\n", listenPort)
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	fmt.Println()
+
 	target, err := url.Parse(targetAddr)
 	if err != nil {
 		log.Fatalf("Invalid TARGET_URL: %v", err)
