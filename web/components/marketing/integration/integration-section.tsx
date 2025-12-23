@@ -54,7 +54,7 @@ docker run -d \\
 
 export function IntegrationSection() {
   return (
-    <section className="py-24 relative overflow-hidden bg-black/50 border-y border-white/5">
+    <section className="py-24 relative overflow-hidden bg-black/50 border-y border-white/5" id="integration">
       <div className="container mx-auto px-4 max-w-5xl">
         <div className="grid lg:grid-cols-2 gap-12">
           <motion.div

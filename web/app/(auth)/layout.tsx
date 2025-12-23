@@ -20,22 +20,6 @@ export default function AuthLayout({
         <div className="w-full max-w-sm space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
           {children}
         </div>
-
-        <div className="absolute bottom-8 text-xs text-muted-foreground">
-          <Link
-            href="#"
-            className="hover:text-foreground underline underline-offset-4"
-          >
-            Terms
-          </Link>
-          {" · "}
-          <Link
-            href="#"
-            className="hover:text-foreground underline underline-offset-4"
-          >
-            Privacy
-          </Link>
-        </div>
       </div>
 
       {/* right auth visual column which is hidden in mobile screens */}

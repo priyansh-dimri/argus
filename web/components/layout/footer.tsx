@@ -36,12 +36,6 @@ export function Footer() {
             >
               Integration
             </Link>
-            <Link
-              href="/docs"
-              className="text-sm text-muted-foreground hover:text-white transition-colors"
-            >
-              Documentation
-            </Link>
           </div>
 
           <div className="flex flex-col gap-4">
@@ -74,14 +68,6 @@ export function Footer() {
           <p className="text-xs text-muted-foreground text-center md:text-left">
             © 2025 Priyansh Dimri. Open Source under MIT License.
           </p>
-          <div className="flex gap-6 text-xs text-muted-foreground">
-            <Link href="#" className="hover:text-white transition-colors">
-              Privacy Policy
-            </Link>
-            <Link href="#" className="hover:text-white transition-colors">
-              Terms of Service
-            </Link>
-          </div>
         </div>
       </div>
     </footer>
