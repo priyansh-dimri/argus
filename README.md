@@ -111,7 +111,7 @@ http://localhost:8000/paranoid/*       # Maximum security
 
 ### Request Processing Pipeline
 
-![Request Pipeline through 3 Argus modes](High.svg)
+![Request Pipeline through 3 Argus modes](assets/request-pipeline.svg)
 
 ### Circuit Breaker Protection
 
