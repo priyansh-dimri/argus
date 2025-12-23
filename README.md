@@ -16,7 +16,8 @@ Argus is a Hybrid AI Web Application Firewall (WAF) written in Go. It aims to so
 
 ## Features
 
-- **<6µs latency** - WAF blocks SQLi/XSS/scanners in microseconds
+- **<200µs overhead** - Full middleware with Coraza WAF + request processing
+- **<6µs WAF core** - Bare Coraza rule execution (no middleware)
 - **Hybrid AI Layer** - Gemini verifies edge cases + business logic flaws
 - **3 Modes** - LatencyFirst/SmartShield/Paranoid for any workload
 - **Circuit Breaker** - Fail-safe WAF fallback when AI down
