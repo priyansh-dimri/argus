@@ -8,7 +8,7 @@
 [![Go Version](https://img.shields.io/badge/Go-1.25.5-00ADD8?style=flat-square&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 [![Docker](https://img.shields.io/badge/docker-ready-2496ED?style=flat-square&logo=docker)](https://github.com/priyansh-dimri/argus/pkgs/container/argus-sidecar)
-[![Live Dashboard](https://img.shields.io/badge/Live%20Dashboard-📊-blue?style=flat&logo=graph)](https://your-link)
+[![Live Dashboard](https://img.shields.io/badge/Live%20Dashboard-📊-blue?style=flat&logo=graph)](https://argusguard.vercel.app/)
 
 </div>
 

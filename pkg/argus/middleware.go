@@ -89,7 +89,7 @@ func (m *Middleware) handleParanoid(w http.ResponseWriter, r *http.Request, next
 
 	isThreat := resp.IsThreat != nil && *resp.IsThreat
 
-	if err == nil && isThreat {
+	if (err == nil && isThreat) || (err != nil && wafBlocked) {
 		http.Error(w, "Blocked by Argus Paranoid Shield", http.StatusForbidden)
 		return
 	}
