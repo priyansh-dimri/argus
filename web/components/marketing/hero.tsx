@@ -59,9 +59,12 @@ export function Hero() {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto"
         >
-          Argus combines deterministic OWASP rules with probabilistic AI
-          analysis. Block SQLi in{" "}
-          <span className="text-foreground font-semibold">10µs</span>.
+          Hybrid WAF. Sub-millisecond blocking. AI-verified edge cases. Three
+          risk profiles for{" "}
+          <a href="#playground" className="text-neon-blue hover:underline">
+            different routes
+          </a>
+          .
         </motion.p>
 
         <motion.div

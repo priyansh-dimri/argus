@@ -275,9 +275,8 @@ const initialEdges: Edge[] = [
     source: "mode-latency",
     target: "breaker",
     label: "Async only",
-    animated: true,
     markerEnd: { type: MarkerType.ArrowClosed },
-    style: { stroke: "#FCD34D", strokeDasharray: "5,5" },
+    style: { stroke: "#FCD34D", strokeWidth: 2 },
   },
   {
     id: "e11",

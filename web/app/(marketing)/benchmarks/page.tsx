@@ -40,7 +40,7 @@ export default async function BenchmarksPage() {
           <div className="mt-4 flex items-center gap-2 text-xs font-mono text-zinc-500">
             <span>Hardware: Intel i5-10210U @ 1.6GHz</span>
             <span>•</span>
-            <span>Environment: Go 1.25, Linux amd64</span>
+            <span>Environment: Go 1.25.5, Linux amd64</span>
           </div>
         </div>
 

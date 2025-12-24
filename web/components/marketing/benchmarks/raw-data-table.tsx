@@ -21,7 +21,7 @@ export function RawDataTable({ data }: { data: BenchmarkData[] }) {
               Memory (Bytes)
             </TableHead>
             <TableHead className="text-right text-gray-400 font-mono text-xs uppercase">
-              Allocations
+              Allocs
             </TableHead>
           </TableRow>
         </TableHeader>

@@ -33,7 +33,7 @@ export function LatencyChart({ data }: { data: BenchmarkData[] }) {
       </CardHeader>
       <CardContent className="h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} layout="vertical" margin={{ left: 40 }}>
+          <BarChart data={data} layout="vertical" margin={{ left: -60 }}>
             <CartesianGrid
               strokeDasharray="3 3"
               stroke="#ffffff10"
@@ -92,7 +92,10 @@ export function ScalabilityChart({ data }: { data: BenchmarkData[] }) {
       </CardHeader>
       <CardContent className="h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={transformed}>
+          <LineChart
+            data={transformed}
+            margin={{ left: -10, right: 10, bottom: 5, top: 5 }}
+          >
             <CartesianGrid
               strokeDasharray="3 3"
               stroke="#ffffff10"
@@ -117,14 +120,10 @@ export function ScalabilityChart({ data }: { data: BenchmarkData[] }) {
               fontSize={10}
               tickLine={false}
               axisLine={false}
-              label={{
-                value: "Latency (µs)",
-                angle: -90,
-                position: "insideLeft",
-                fill: "#666",
-                fontSize: 10,
-              }}
+              width={40}
+              tick={{ fontSize: 9 }}
             />
+
             <Tooltip contentStyle={TOOLTIP_STYLE} />
             <Line
               type="monotone"
@@ -152,7 +151,7 @@ export function ThroughputChart({ data }: { data: BenchmarkData[] }) {
       </CardHeader>
       <CardContent className="h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data}>
+          <BarChart data={data} margin={{ left: -30 }}>
             <CartesianGrid
               strokeDasharray="3 3"
               stroke="#ffffff10"

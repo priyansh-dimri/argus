@@ -38,7 +38,7 @@ export function CodeBlock({ code, language }: CodeBlockProps) {
         </button>
       </div>
 
-      <div className="p-4 overflow-x-auto">
+      <div className="p-3 md:p-4 overflow-x-auto text-xs md:text-sm">
         <pre>
           <code className="grid gap-1">
             {lines.map((line, i) => (

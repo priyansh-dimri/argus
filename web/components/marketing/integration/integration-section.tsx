@@ -54,20 +54,23 @@ docker run -d \\
 
 export function IntegrationSection() {
   return (
-    <section className="py-24 relative overflow-hidden bg-black/50 border-y border-white/5" id="integration">
+    <section
+      className="py-24 relative overflow-hidden bg-black/50 border-y border-white/5"
+      id="integration"
+    >
       <div className="container mx-auto px-4 max-w-5xl">
-        <div className="grid lg:grid-cols-2 gap-12">
+        <div className="flex flex-col lg:grid lg:grid-cols-2 gap-8 lg:gap-12">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             className="space-y-6"
           >
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-white">
+            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-white">
               Drop-in Middleware. <br />
               <span className="text-muted-foreground">Zero Friction.</span>
             </h2>
-            <p className="text-lg text-muted-foreground leading-relaxed">
+            <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
               Whether you are building a Go monolith or a polyglot microservices
               mesh, Argus fits into your stack in minutes.
             </p>
