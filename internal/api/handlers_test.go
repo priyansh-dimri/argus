@@ -63,12 +63,8 @@ func TestAnalyzeHandler(t *testing.T) {
 		api := &API{
 			Analyzer: mock,
 			Store:    store,
-			ErrorReporter: func(msg string, args ...any) {
-				if len(args) > 1 {
-					if err, ok := args[1].(error); ok {
-						errorChan <- err
-					}
-				}
+			ErrorReporter: func(msg string, err error, args ...any) {
+				errorChan <- err
 			},
 		}
 
@@ -186,12 +182,8 @@ func TestHandleCreateProject(t *testing.T) {
 		errorChan := make(chan error, 1)
 		api := &API{
 			Store: store,
-			ErrorReporter: func(msg string, args ...any) {
-				if len(args) > 1 {
-					if err, ok := args[1].(error); ok {
-						errorChan <- err
-					}
-				}
+			ErrorReporter: func(msg string, err error, args ...any) {
+				errorChan <- err
 			},
 		}
 
@@ -254,12 +246,8 @@ func TestHandleListProjects(t *testing.T) {
 		errorChan := make(chan error, 1)
 		api := &API{
 			Store: store,
-			ErrorReporter: func(msg string, args ...any) {
-				if len(args) > 1 {
-					if err, ok := args[1].(error); ok {
-						errorChan <- err
-					}
-				}
+			ErrorReporter: func(msg string, err error, args ...any) {
+				errorChan <- err
 			},
 		}
 
@@ -387,12 +375,8 @@ func TestHandleUpdateProject(t *testing.T) {
 		errorChan := make(chan error, 1)
 		api := &API{
 			Store: store,
-			ErrorReporter: func(msg string, args ...any) {
-				if len(args) > 1 {
-					if err, ok := args[1].(error); ok {
-						errorChan <- err
-					}
-				}
+			ErrorReporter: func(msg string, err error, args ...any) {
+				errorChan <- err
 			},
 		}
 
@@ -457,12 +441,8 @@ func TestHandleDeleteProject(t *testing.T) {
 		errorChan := make(chan error, 1)
 		api := &API{
 			Store: store,
-			ErrorReporter: func(msg string, args ...any) {
-				if len(args) > 1 {
-					if err, ok := args[1].(error); ok {
-						errorChan <- err
-					}
-				}
+			ErrorReporter: func(msg string, err error, args ...any) {
+				errorChan <- err
 			},
 		}
 
@@ -527,12 +507,8 @@ func TestHandleRotateKey(t *testing.T) {
 		errorChan := make(chan error, 1)
 		api := &API{
 			Store: store,
-			ErrorReporter: func(msg string, args ...any) {
-				if len(args) > 1 {
-					if err, ok := args[1].(error); ok {
-						errorChan <- err
-					}
-				}
+			ErrorReporter: func(msg string, err error, args ...any) {
+				errorChan <- err
 			},
 		}
 
@@ -596,12 +572,8 @@ func TestHandleDeleteAccount(t *testing.T) {
 
 		api := &API{
 			Store: store,
-			ErrorReporter: func(msg string, args ...any) {
-				if len(args) > 1 {
-					if err, ok := args[1].(error); ok {
-						errorChan <- err
-					}
-				}
+			ErrorReporter: func(msg string, err error, args ...any) {
+				errorChan <- err
 			},
 		}
 
