@@ -77,17 +77,6 @@ func main() {
 		"min_conns", config.MinConns,
 	)
 
-	logger.Info("Testing database connection", "component", "main")
-	pingCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-
-	if err := dbPool.Ping(pingCtx); err != nil {
-		logger.Error("Database ping failed", err, "component", "main")
-		os.Exit(1)
-	}
-
-	logger.Info("Database connection test successful", "component", "main")
-
 	logger.Info("Initializing storage layer", "component", "main")
 	store := storage.NewSupabaseStore(dbPool)
 
