@@ -55,7 +55,7 @@ export function Footer() {
               <FaLinkedin className="w-4 h-4" /> LinkedIn
             </Link>
             <Link
-              href="https://hashnode.com/@priyanshdimri"
+               href="https://priyanshdimri.hashnode.dev/building-hybrid-waf-go-owasp-gemini"
               target="_blank"
               className="flex items-center gap-2 text-sm text-muted-foreground hover:text-white transition-colors"
             >
